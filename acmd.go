@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"sort"
@@ -43,6 +44,10 @@ type Config struct {
 	// Version of the application.
 	Version string
 
+	// Output is a destionation where result will be printed.
+	// Exported for testing purpose only, if nil os.Stderr is used.
+	Output io.Writer
+
 	// Context for commands, if nil context based on os.Interrupt will be used.
 	Context context.Context
 
@@ -78,8 +83,12 @@ func (r *Runner) init() error {
 		r.ctx, _ = signal.NotifyContext(context.Background(), os.Interrupt)
 	}
 
+	if r.cfg.Output == nil {
+		r.cfg.Output = os.Stderr
+	}
+
 	if r.cfg.Usage == nil {
-		r.cfg.Usage = defaultUsage
+		r.cfg.Usage = defaultUsage(r.cfg.Output)
 	}
 
 	names := make(map[string]struct{})
@@ -121,7 +130,7 @@ func (r *Runner) run() error {
 		r.cfg.Usage(r.cfg, r.cmds)
 		return nil
 	case cmd == "version":
-		fmt.Printf("%s version: %s\n\n", r.cfg.AppName, r.cfg.Version)
+		fmt.Fprintf(r.cfg.Output, "%s version: %s\n\n", r.cfg.AppName, r.cfg.Version)
 		return nil
 	}
 
@@ -133,23 +142,25 @@ func (r *Runner) run() error {
 	return fmt.Errorf("no such command %q", cmd)
 }
 
-var defaultUsage = func(cfg Config, cmds []Command) {
-	if cfg.AppDescription != "" {
-		fmt.Fprintf(os.Stderr, "%s\n\n", cfg.AppDescription)
-	}
+var defaultUsage = func(w io.Writer) func(cfg Config, cmds []Command) {
+	return func(cfg Config, cmds []Command) {
+		if cfg.AppDescription != "" {
+			fmt.Fprintf(w, "%s\n\n", cfg.AppDescription)
+		}
 
-	fmt.Fprintf(os.Stderr, "Usage:\n\n    %s <command> [arguments]\n\nThe commands are:\n\n", cfg.AppName)
-	printCommands(cmds)
+		fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments]\n\nThe commands are:\n\n", cfg.AppName)
+		printCommands(w, cmds)
 
-	if cfg.Version != "" {
-		fmt.Fprintf(os.Stderr, "Version: %s\n\n", cfg.Version)
+		if cfg.Version != "" {
+			fmt.Fprintf(w, "Version: %s\n\n", cfg.Version)
+		}
 	}
 }
 
 // printCommands in a table form (Name and Description)
-func printCommands(cmds []Command) {
+func printCommands(w io.Writer, cmds []Command) {
 	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
-	tw := tabwriter.NewWriter(os.Stderr, minwidth, tabwidth, padding, padchar, flags)
+	tw := tabwriter.NewWriter(w, minwidth, tabwidth, padding, padchar, flags)
 	for _, cmd := range cmds {
 		fmt.Fprintf(tw, "    %s\t%s\n", cmd.Name, cmd.Description)
 	}
