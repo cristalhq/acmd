@@ -36,6 +36,9 @@ type Config struct {
 	// AppName is an optional nal for the app, if empty os.Args[0] will be used.
 	AppName string
 
+	// Version of the application.
+	Version string
+
 	// Context for commands, if nil context based on os.Interrupt will be used.
 	Context context.Context
 
@@ -75,8 +78,8 @@ func (r *Runner) init() error {
 
 	names := make(map[string]struct{})
 	for _, cmd := range r.cmds {
-		if cmd.Name == "help" {
-			return errors.New("acmd: command name 'help' is reserved")
+		if cmd.Name == "help" || cmd.Name == "version" {
+			return fmt.Errorf("acmd: command name %q is reserved", cmd.Name)
 		}
 		if _, ok := names[cmd.Name]; ok {
 			return fmt.Errorf("acmd: duplicate command %q", cmd.Name)
@@ -103,8 +106,12 @@ func (r *Runner) Run() error {
 
 func (r *Runner) run() error {
 	cmd, params := r.args[0], r.args[1:]
-	if cmd == "help" {
+	switch {
+	case cmd == "help":
 		r.cfg.Usage()
+		return nil
+	case cmd == "version":
+		fmt.Printf("%s version: %s\n", r.cfg.AppName, r.cfg.Version)
 		return nil
 	}
 
