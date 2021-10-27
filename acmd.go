@@ -121,7 +121,7 @@ func (r *Runner) run() error {
 		r.cfg.Usage(r.cfg, r.cmds)
 		return nil
 	case cmd == "version":
-		fmt.Printf("%s version: %s\n", r.cfg.AppName, r.cfg.Version)
+		fmt.Printf("%s version: %s\n\n", r.cfg.AppName, r.cfg.Version)
 		return nil
 	}
 
