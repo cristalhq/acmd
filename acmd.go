@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"text/tabwriter"
 )
 
 // Runner of the sub-commands.
@@ -33,8 +34,11 @@ type Command struct {
 
 // Config for the runner.
 type Config struct {
-	// AppName is an optional nal for the app, if empty os.Args[0] will be used.
+	// AppName is an optional name for the app, if empty os.Args[0] will be used.
 	AppName string
+
+	// AppDescription is an optional description. default is empty.
+	AppDescription string
 
 	// Version of the application.
 	Version string
@@ -46,7 +50,7 @@ type Config struct {
 	Args []string
 
 	// Usage of the application, if nil default will be used,
-	Usage func(name string, cmds []Command)
+	Usage func(cfg Config, cmds []Command)
 }
 
 // RunnerOf creates a Runner.
@@ -72,6 +76,10 @@ func (r *Runner) init() error {
 	if r.ctx == nil {
 		// ok to ignore cancel func because os.Interrupt is already almost os.Exit
 		r.ctx, _ = signal.NotifyContext(context.Background(), os.Interrupt)
+	}
+
+	if r.cfg.Usage == nil {
+		r.cfg.Usage = defaultUsage
 	}
 
 	names := make(map[string]struct{})
@@ -110,7 +118,7 @@ func (r *Runner) run() error {
 	cmd, params := r.args[0], r.args[1:]
 	switch {
 	case cmd == "help":
-		r.cfg.Usage(r.cfg.AppName, r.cmds)
+		r.cfg.Usage(r.cfg, r.cmds)
 		return nil
 	case cmd == "version":
 		fmt.Printf("%s version: %s\n", r.cfg.AppName, r.cfg.Version)
@@ -123,4 +131,28 @@ func (r *Runner) run() error {
 		}
 	}
 	return fmt.Errorf("no such command %q", cmd)
+}
+
+var defaultUsage = func(cfg Config, cmds []Command) {
+	if cfg.AppDescription != "" {
+		fmt.Fprintf(os.Stderr, "%s\n\n", cfg.AppDescription)
+	}
+
+	fmt.Fprintf(os.Stderr, "Usage:\n\n    %s <command> [arguments]\n\nThe commands are:\n\n", cfg.AppName)
+	printCommands(cmds)
+
+	if cfg.Version != "" {
+		fmt.Fprintf(os.Stderr, "Version: %s\n\n", cfg.Version)
+	}
+}
+
+// printCommands in a table form (Name and Description)
+func printCommands(cmds []Command) {
+	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
+	tw := tabwriter.NewWriter(os.Stderr, minwidth, tabwidth, padding, padchar, flags)
+	for _, cmd := range cmds {
+		fmt.Fprintf(tw, "    %s\t%s\n", cmd.Name, cmd.Description)
+	}
+	fmt.Fprint(tw, "\n")
+	tw.Flush()
 }
