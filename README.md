@@ -29,7 +29,7 @@ go get github.com/cristalhq/acmd
 
 ## Example
 
-```
+```go
 cmds := []acmd.Command{
 	{
 		Name:        "now",
