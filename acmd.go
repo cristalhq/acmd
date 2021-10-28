@@ -7,9 +7,12 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"regexp"
 	"sort"
 	"text/tabwriter"
 )
+
+var cmdNameRE = regexp.MustCompile("^[A-Za-z0-9-_]+$")
 
 // Runner of the sub-commands.
 type Runner struct {
@@ -69,8 +72,12 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 }
 
 func (r *Runner) init() error {
+	if r.cfg.AppName == "" {
+		r.cfg.AppName = os.Args[0]
+	}
+
 	r.args = r.cfg.Args
-	if len(r.args) == 0 {
+	if r.args == nil {
 		r.args = os.Args[1:]
 	}
 	if len(r.args) == 0 {
@@ -98,6 +105,8 @@ func (r *Runner) init() error {
 			return fmt.Errorf("command %q function cannot be nil", cmd.Name)
 		case cmd.Name == "help" || cmd.Name == "version":
 			return fmt.Errorf("command %q is reserved", cmd.Name)
+		case !cmdNameRE.MatchString(cmd.Name):
+			return fmt.Errorf("command %q must contains only letters, digits, - and _", cmd.Name)
 		}
 
 		if _, ok := names[cmd.Name]; ok {
