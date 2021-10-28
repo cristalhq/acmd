@@ -1,6 +1,7 @@
 package acmd
 
 import (
+	"bytes"
 	"context"
 	"testing"
 )
@@ -47,6 +48,54 @@ func TestRunner_init(t *testing.T) {
 
 		if got := err.Error(); got != tc.wantErrStr {
 			t.Fatalf("want %q got %q", tc.wantErrStr, got)
+		}
+	}
+}
+
+func TestRunner_suggestCommand(t *testing.T) {
+	testCases := []struct {
+		cmds []Command
+		args []string
+		want string
+	}{
+		{
+			cmds: []Command{
+				{Name: "for", Do: nopFunc},
+				{Name: "foo", Do: nopFunc},
+				{Name: "bar", Do: nopFunc},
+			},
+			args: []string{"fooo"},
+			want: `"fooo" is not a subcommand, did you mean "foo"?` + "\n",
+		},
+		{
+			cmds: []Command{},
+			args: []string{"hell"},
+			want: `"hell" is not a subcommand, did you mean "help"?` + "\n",
+		},
+		{
+			cmds: []Command{},
+			args: []string{"verZION"},
+			want: "",
+		},
+		{
+			cmds: []Command{},
+			args: []string{"verZion"},
+			want: `"verZion" is not a subcommand, did you mean "version"?` + "\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		buf := &bytes.Buffer{}
+		r := RunnerOf(tc.cmds, Config{
+			Args:   tc.args,
+			Output: buf,
+		})
+		if err := r.Run(); err == nil {
+			t.Fatal()
+		}
+
+		if got := buf.String(); got != tc.want {
+			t.Logf("want %q got %q", tc.want, got)
 		}
 	}
 }

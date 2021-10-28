@@ -159,7 +159,27 @@ func (r *Runner) run() error {
 			return c.Do(r.ctx, params)
 		}
 	}
+
+	if suggestion := r.suggestCommand(cmd); suggestion != "" {
+		fmt.Fprintf(r.cfg.Output, "%q is not a subcommand, did you mean %q?\n", cmd, suggestion)
+	}
 	return fmt.Errorf("no such command %q", cmd)
+}
+
+// suggestCommand for not found earlier command.
+func (r *Runner) suggestCommand(cmd string) string {
+	const maxMatchDist = 2
+	minDist := maxMatchDist + 1
+	match := ""
+
+	for _, c := range r.cmds {
+		dist := strDistance(cmd, c.Name)
+		if dist < minDist {
+			minDist = dist
+			match = c.Name
+		}
+	}
+	return match
 }
 
 var defaultUsage = func(w io.Writer) func(cfg Config, cmds []Command) {
