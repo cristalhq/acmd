@@ -70,9 +70,8 @@ func ExampleHelp() {
 			Do:          nopFunc,
 		},
 		{
-			Name:        "boom",
-			Description: "bombom",
-			Do:          nopFunc,
+			Name: "boom",
+			Do:   nopFunc,
 		},
 	}
 
@@ -92,11 +91,11 @@ func ExampleHelp() {
 	//
 	// Usage:
 	//
-	//     acmd-example <command> [arguments]
+	//     acmd-example <command> [arguments...]
 	//
 	// The commands are:
 	//
-	//     boom              bombom
+	//     boom              <no description>
 	//     help              shows help message
 	//     now               prints current time
 	//     status            prints status of the system

@@ -168,7 +168,7 @@ var defaultUsage = func(w io.Writer) func(cfg Config, cmds []Command) {
 			fmt.Fprintf(w, "%s\n\n", cfg.AppDescription)
 		}
 
-		fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments]\n\nThe commands are:\n\n", cfg.AppName)
+		fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments...]\n\nThe commands are:\n\n", cfg.AppName)
 		printCommands(w, cmds)
 
 		if cfg.Version != "" {
@@ -182,7 +182,11 @@ func printCommands(w io.Writer, cmds []Command) {
 	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
 	tw := tabwriter.NewWriter(w, minwidth, tabwidth, padding, padchar, flags)
 	for _, cmd := range cmds {
-		fmt.Fprintf(tw, "    %s\t%s\n", cmd.Name, cmd.Description)
+		desc := cmd.Description
+		if desc == "" {
+			desc = "<no description>"
+		}
+		fmt.Fprintf(tw, "    %s\t%s\n", cmd.Name, desc)
 	}
 	fmt.Fprint(tw, "\n")
 	tw.Flush()
