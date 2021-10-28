@@ -115,6 +115,25 @@ func (r *Runner) init() error {
 		names[cmd.Name] = struct{}{}
 	}
 
+	r.cmds = append(r.cmds,
+		Command{
+			Name:        "help",
+			Description: "shows help message",
+			Do: func(ctx context.Context, args []string) error {
+				r.cfg.Usage(r.cfg, r.cmds)
+				return nil
+			},
+		},
+		Command{
+			Name:        "version",
+			Description: "shows version of the application",
+			Do: func(ctx context.Context, args []string) error {
+				fmt.Fprintf(r.cfg.Output, "%s version: %s\n\n", r.cfg.AppName, r.cfg.Version)
+				return nil
+			},
+		},
+	)
+
 	sort.Slice(r.cmds, func(i, j int) bool {
 		return r.cmds[i].Name < r.cmds[j].Name
 	})
@@ -134,14 +153,6 @@ func (r *Runner) Run() error {
 
 func (r *Runner) run() error {
 	cmd, params := r.args[0], r.args[1:]
-	switch {
-	case cmd == "help":
-		r.cfg.Usage(r.cfg, r.cmds)
-		return nil
-	case cmd == "version":
-		fmt.Fprintf(r.cfg.Output, "%s version: %s\n\n", r.cfg.AppName, r.cfg.Version)
-		return nil
-	}
 
 	for _, c := range r.cmds {
 		if c.Name == cmd {
