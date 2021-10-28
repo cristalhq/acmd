@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/cristalhq/acmd"
 )
+
+var nopFunc = func(context.Context, []string) error { return nil }
 
 func ExampleRunner() {
 	const format = "15:04:05"
@@ -52,4 +55,50 @@ func ExampleRunner() {
 	}
 
 	// Output: now: 10:20:30
+}
+
+func ExampleHelp() {
+	cmds := []acmd.Command{
+		{
+			Name:        "now",
+			Description: "prints current time",
+			Do:          nopFunc,
+		},
+		{
+			Name:        "status",
+			Description: "prints status of the system",
+			Do:          nopFunc,
+		},
+		{
+			Name:        "boom",
+			Description: "bombom",
+			Do:          nopFunc,
+		},
+	}
+
+	r := acmd.RunnerOf(cmds, acmd.Config{
+		AppName:        "acmd-example",
+		AppDescription: "Example of acmd package",
+		Version:        "the best v0.x.y",
+		Output:         os.Stdout,
+		Args:           []string{"help"},
+	})
+
+	if err := r.Run(); err != nil {
+		panic(err)
+	}
+
+	// Output: Example of acmd package
+	//
+	// Usage:
+	//
+	//     acmd-example <command> [arguments]
+	//
+	// The commands are:
+	//
+	//     boom             bombom
+	//     now              prints current time
+	//     status           prints status of the system
+	//
+	// Version: the best v0.x.y
 }
