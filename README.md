@@ -54,9 +54,9 @@ r := acmd.RunnerOf(cmds, acmd.Config{
 	AppName:        "acmd-example",
 	AppDescription: "Example of acmd package",
 	Version:        "the best v0.x.y",
-	Context:        nil,
-	Args:           []string{"now"},
-	Usage:          nil,
+	// Context - if nil `signal.Notify` will be used
+	// Args - if nil `os.Args[1:]` will be used
+	// Usage - if nil default print will be used
 })
 
 if err := r.Run(); err != nil {
