@@ -15,6 +15,7 @@ TODO.
 
 * Simple API.
 * Easy to integrate.
+* Builtin `help` and `version` commands.
 * Clean and tested code.
 * Dependency-free.
 
@@ -28,7 +29,42 @@ go get github.com/cristalhq/acmd
 
 ## Example
 
-TODO
+```
+cmds := []acmd.Command{
+	{
+		Name:        "now",
+		Description: "prints current time",
+		Do: func(ctx context.Context, args []string) error {
+			fmt.Printf("now: %s\n", now.Format("15:04:05"))
+			return nil
+		},
+	},
+	{
+		Name:        "status",
+		Description: "prints status of the system",
+		Do: func(ctx context.Context, args []string) error {
+			// do something with ctx :)
+			return nil
+		},
+	},
+}
+
+// all the acmd.Config fields are optional
+r := acmd.RunnerOf(cmds, acmd.Config{
+	AppName:        "acmd-example",
+	AppDescription: "Example of acmd package",
+	Version:        "the best v0.x.y",
+	Context:        nil,
+	Args:           []string{"now"},
+	Usage:          nil,
+})
+
+if err := r.Run(); err != nil {
+	panic(err)
+}
+```
+
+Also see examples: [examples_test.go](https://github.com/cristalhq/acmd/blob/main/example_test.go).
 
 ## Documentation
 
