@@ -13,6 +13,9 @@ import (
 var nopFunc = func(context.Context, []string) error { return nil }
 
 func ExampleRunner() {
+	testOut := os.Stdout
+	testArgs := []string{"now"}
+
 	const format = "15:04:05"
 	now, _ := time.Parse("15:04:05", "10:20:30")
 
@@ -45,9 +48,8 @@ func ExampleRunner() {
 		AppName:        "acmd-example",
 		AppDescription: "Example of acmd package",
 		Version:        "the best v0.x.y",
-		Context:        nil,
-		Args:           []string{"now"},
-		Usage:          nil,
+		Output:         testOut,
+		Args:           testArgs,
 	})
 
 	if err := r.Run(); err != nil {
@@ -58,6 +60,9 @@ func ExampleRunner() {
 }
 
 func ExampleHelp() {
+	testOut := os.Stdout
+	testArgs := []string{"help"}
+
 	cmds := []acmd.Command{
 		{
 			Name:        "now",
@@ -79,8 +84,8 @@ func ExampleHelp() {
 		AppName:        "acmd-example",
 		AppDescription: "Example of acmd package",
 		Version:        "the best v0.x.y",
-		Output:         os.Stdout,
-		Args:           []string{"help"},
+		Output:         testOut,
+		Args:           testArgs,
 	})
 
 	if err := r.Run(); err != nil {
@@ -105,6 +110,9 @@ func ExampleHelp() {
 }
 
 func ExampleVersion() {
+	testOut := os.Stdout
+	testArgs := []string{"version"}
+
 	cmds := []acmd.Command{
 		{Name: "foo", Do: nopFunc},
 		{Name: "bar", Do: nopFunc},
@@ -114,8 +122,8 @@ func ExampleVersion() {
 		AppName:        "acmd-example",
 		AppDescription: "Example of acmd package",
 		Version:        "the best v0.x.y",
-		Output:         os.Stdout,
-		Args:           []string{"version"},
+		Output:         testOut,
+		Args:           testArgs,
 	})
 
 	if err := r.Run(); err != nil {
