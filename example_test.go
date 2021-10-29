@@ -103,3 +103,24 @@ func ExampleHelp() {
 	//
 	// Version: the best v0.x.y
 }
+
+func ExampleVersion() {
+	cmds := []acmd.Command{
+		{Name: "foo", Do: nopFunc},
+		{Name: "bar", Do: nopFunc},
+	}
+
+	r := acmd.RunnerOf(cmds, acmd.Config{
+		AppName:        "acmd-example",
+		AppDescription: "Example of acmd package",
+		Version:        "the best v0.x.y",
+		Output:         os.Stdout,
+		Args:           []string{"version"},
+	})
+
+	if err := r.Run(); err != nil {
+		panic(err)
+	}
+
+	// Output: acmd-example version: the best v0.x.y
+}
