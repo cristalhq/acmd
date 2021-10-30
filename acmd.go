@@ -145,25 +145,28 @@ func (r *Runner) Run() error {
 	if r.errInit != nil {
 		return fmt.Errorf("acmd: cannot init runner: %w", r.errInit)
 	}
-	if err := r.run(); err != nil {
+	if err := run(r.ctx, r.cfg, r.cmds, r.args); err != nil {
 		return fmt.Errorf("acmd: cannot run command: %w", err)
 	}
 	return nil
 }
 
-func (r *Runner) run() error {
-	cmd, params := r.args[0], r.args[1:]
+func run(ctx context.Context, cfg Config, cmds []Command, args []string) error {
+	if len(args) == 0 {
+		return errors.New("no args provided")
+	}
+	selected, params := args[0], args[1:]
 
-	for _, c := range r.cmds {
-		if c.Name == cmd {
-			return c.Do(r.ctx, params)
+	for _, c := range cmds {
+		if c.Name == selected {
+			return c.Do(ctx, params)
 		}
 	}
 
-	if suggestion := suggestCommand(cmd, r.cmds); suggestion != "" {
-		fmt.Fprintf(r.cfg.Output, "%q is not a subcommand, did you mean %q?\n", cmd, suggestion)
+	if suggestion := suggestCommand(selected, cmds); suggestion != "" {
+		fmt.Fprintf(cfg.Output, "%q is not a subcommand, did you mean %q?\n", selected, suggestion)
 	}
-	return fmt.Errorf("no such command %q", cmd)
+	return fmt.Errorf("no such command %q", selected)
 }
 
 // suggestCommand for not found earlier command.
