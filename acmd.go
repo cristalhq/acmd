@@ -218,7 +218,7 @@ func suggestCommand(got string, cmds []Command) string {
 	return match
 }
 
-var defaultUsage = func(w io.Writer) func(cfg Config, cmds []Command) {
+func defaultUsage(w io.Writer) func(cfg Config, cmds []Command) {
 	return func(cfg Config, cmds []Command) {
 		if cfg.AppDescription != "" {
 			fmt.Fprintf(w, "%s\n\n", cfg.AppDescription)
