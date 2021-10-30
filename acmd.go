@@ -160,20 +160,20 @@ func (r *Runner) run() error {
 		}
 	}
 
-	if suggestion := r.suggestCommand(cmd); suggestion != "" {
+	if suggestion := suggestCommand(cmd, r.cmds); suggestion != "" {
 		fmt.Fprintf(r.cfg.Output, "%q is not a subcommand, did you mean %q?\n", cmd, suggestion)
 	}
 	return fmt.Errorf("no such command %q", cmd)
 }
 
 // suggestCommand for not found earlier command.
-func (r *Runner) suggestCommand(cmd string) string {
+func suggestCommand(got string, cmds []Command) string {
 	const maxMatchDist = 2
 	minDist := maxMatchDist + 1
 	match := ""
 
-	for _, c := range r.cmds {
-		dist := strDistance(cmd, c.Name)
+	for _, c := range cmds {
+		dist := strDistance(got, c.Name)
 		if dist < minDist {
 			minDist = dist
 			match = c.Name
