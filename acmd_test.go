@@ -2,10 +2,13 @@ package acmd
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestRunnerMustSetDefaults(t *testing.T) {
@@ -96,6 +99,18 @@ func TestRunnerInit(t *testing.T) {
 			wantErrStr: `command "foo%" function cannot be nil`,
 		},
 		{
+			cmds:       []Command{{Name: "foo", Do: nil}},
+			wantErrStr: `command "foo" function cannot be nil or must have subcommands`,
+		},
+		{
+			cmds: []Command{{
+				Name:        "foobar",
+				Do:          nopFunc,
+				subcommands: []Command{{Name: "nested"}},
+			}},
+			wantErrStr: `command "foobar" function cannot be set and have subcommands`,
+		},
+		{
 			cmds: []Command{{Name: "foo", Do: nopFunc}},
 			cfg: Config{
 				Args: []string{},
@@ -183,12 +198,61 @@ func TestRunner_suggestCommand(t *testing.T) {
 			Args:   tc.args,
 			Output: buf,
 		})
-		if err := r.Run(); err == nil {
-			t.Fatal()
+		if err := r.Run(); err != nil && !strings.Contains(err.Error(), "no such command") {
+			t.Fatal(err)
 		}
 
 		if got := buf.String(); got != tc.want {
-			t.Logf("want %q got %q", tc.want, got)
+			t.Fatalf("want %q got %q", tc.want, got)
 		}
+	}
+}
+
+func TestRunner(t *testing.T) {
+	r := RunnerOf([]Command{
+		{
+			Name:        "test",
+			Description: "some test command",
+			// Do: func(ctx context.Context, args []string) error {
+			// 	return nil
+			// },
+			subcommands: []Command{
+				{
+					Name: "foo",
+					// Do: func(ctx context.Context, args []string) error {
+					// 	fmt.Fprint(os.Stderr, "foo")
+					// 	return nil
+					// },
+					subcommands: []Command{
+						{
+							Name: "for", Do: func(ctx context.Context, args []string) error {
+								fmt.Fprint(os.Stderr, "for")
+								return nil
+							},
+						},
+					},
+				},
+				{Name: "bar", Do: func(ctx context.Context, args []string) error {
+					fmt.Fprint(os.Stderr, "bar")
+					return nil
+				}},
+			},
+		},
+		{
+			Name:        "status",
+			Description: "status command gives status of the state",
+			Do: func(ctx context.Context, args []string) error {
+				return nil
+			},
+		},
+	}, Config{
+		Args:           []string{"test", "foo", "for"},
+		AppName:        "acmd_test_app",
+		AppDescription: "acmd_test_app is a test application.",
+		Version:        time.Now().String(),
+	})
+
+	if err := r.Run(); err != nil {
+		t.Fatal(err)
 	}
 }

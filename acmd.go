@@ -87,6 +87,9 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 }
 
 func (r *Runner) init() error {
+	if len(r.cmds) == 0 {
+		return errors.New("no cmds provided")
+	}
 	if r.cfg.AppName == "" {
 		r.cfg.AppName = os.Args[0]
 	}
@@ -147,6 +150,7 @@ func (r *Runner) init() error {
 	})
 
 	r.rootCmd.subcommands = cmds
+	r.rootCmd.Do = rootDo(r.cfg, cmds)
 
 	return nil
 }
@@ -156,7 +160,10 @@ func validateCommand(cmd Command) error {
 
 	switch {
 	case cmd.Do == nil && len(cmds) == 0:
-		return fmt.Errorf("command %q function cannot be nil", cmd.Name)
+		return fmt.Errorf("command %q function cannot be nil or must have subcommands", cmd.Name)
+
+	case cmd.Do != nil && len(cmds) != 0:
+		return fmt.Errorf("command %q function cannot be set and have subcommands", cmd.Name)
 
 	case cmd.Name == "help" || cmd.Name == "version":
 		return fmt.Errorf("command %q is reserved", cmd.Name)
@@ -202,25 +209,48 @@ func (r *Runner) Run() error {
 	if r.errInit != nil {
 		return fmt.Errorf("acmd: cannot init runner: %w", r.errInit)
 	}
-	if err := run(r.ctx, r.cfg, r.rootCmd.subcommands, r.args); err != nil {
+	if err := r.rootCmd.Do(r.ctx, r.args); err != nil {
 		return fmt.Errorf("acmd: cannot run command: %w", err)
 	}
 	return nil
 }
 
-func run(ctx context.Context, cfg Config, cmds []Command, args []string) error {
-	selected, params := args[0], args[1:]
+func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string) error {
+	return func(ctx context.Context, args []string) error {
+		if len(args) == 0 {
+			return errors.New("no args provided")
+		}
 
-	for _, c := range cmds {
-		if selected == c.Name || selected == c.Alias {
-			return c.Do(ctx, params)
+		cmds, args := cmds, args
+		for {
+			selected, params := args[0], args[1:]
+
+			var found bool
+			for _, c := range cmds {
+				if c.Name != selected {
+					continue
+				}
+
+				// go deeper into subcommands
+				if c.Do == nil {
+					if len(params) == 0 {
+						return errors.New("no args for subcmd provided")
+					}
+					cmds, args = c.subcommands, params
+					found = true
+					break
+				}
+				return c.Do(ctx, params)
+			}
+
+			if !found {
+				if suggestion := suggestCommand(selected, cmds); suggestion != "" {
+					fmt.Fprintf(cfg.Output, "%q is not a subcommand, did you mean %q?\n", selected, suggestion)
+				}
+				return fmt.Errorf("no such command %q", selected)
+			}
 		}
 	}
-
-	if suggestion := suggestCommand(selected, cmds); suggestion != "" {
-		fmt.Fprintf(cfg.Output, "%q is not a subcommand, did you mean %q?\n", selected, suggestion)
-	}
-	return fmt.Errorf("no such command %q", selected)
 }
 
 // suggestCommand for not found earlier command.
