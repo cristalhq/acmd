@@ -20,8 +20,9 @@ type Runner struct {
 	cmds    []Command
 	errInit error
 
-	ctx  context.Context
-	args []string
+	ctx     context.Context
+	rootCmd Command
+	args    []string
 }
 
 // Command specifies a sub-command for a program's command-line interface.
@@ -34,6 +35,9 @@ type Command struct {
 
 	// Do will be invoked.
 	Do func(ctx context.Context, args []string) error
+
+	// subcommands of the command.
+	subcommands []Command
 }
 
 // Config for the runner.
@@ -98,29 +102,22 @@ func (r *Runner) init() error {
 		r.cfg.Usage = defaultUsage(r.cfg.Output)
 	}
 
-	names := make(map[string]struct{})
-	for _, cmd := range r.cmds {
-		switch {
-		case cmd.Do == nil:
-			return fmt.Errorf("command %q function cannot be nil", cmd.Name)
-		case cmd.Name == "help" || cmd.Name == "version":
-			return fmt.Errorf("command %q is reserved", cmd.Name)
-		case !cmdNameRE.MatchString(cmd.Name):
-			return fmt.Errorf("command %q must contains only letters, digits, - and _", cmd.Name)
-		}
-
-		if _, ok := names[cmd.Name]; ok {
-			return fmt.Errorf("duplicate command %q", cmd.Name)
-		}
-		names[cmd.Name] = struct{}{}
+	cmds := r.cmds
+	r.rootCmd = Command{
+		Name:        "root",
+		Do:          func(context.Context, []string) error { return nil },
+		subcommands: cmds,
+	}
+	if err := validateCommand(r.rootCmd); err != nil {
+		return err
 	}
 
-	r.cmds = append(r.cmds,
+	cmds = append(cmds,
 		Command{
 			Name:        "help",
 			Description: "shows help message",
 			Do: func(ctx context.Context, args []string) error {
-				r.cfg.Usage(r.cfg, r.cmds)
+				r.cfg.Usage(r.cfg, cmds)
 				return nil
 			},
 		},
@@ -134,9 +131,45 @@ func (r *Runner) init() error {
 		},
 	)
 
-	sort.Slice(r.cmds, func(i, j int) bool {
-		return r.cmds[i].Name < r.cmds[j].Name
+	sort.Slice(cmds, func(i, j int) bool {
+		return cmds[i].Name < cmds[j].Name
 	})
+
+	r.rootCmd.subcommands = cmds
+
+	return nil
+}
+
+func validateCommand(cmd Command) error {
+	cmds := cmd.subcommands
+
+	switch {
+	case cmd.Do == nil && len(cmds) == 0:
+		return fmt.Errorf("command %q function cannot be nil", cmd.Name)
+
+	case cmd.Name == "help" || cmd.Name == "version":
+		return fmt.Errorf("command %q is reserved", cmd.Name)
+
+	case !cmdNameRE.MatchString(cmd.Name):
+		return fmt.Errorf("command %q must contains only letters, digits, - and _", cmd.Name)
+
+	case len(cmds) != 0:
+		sort.Slice(cmds, func(i, j int) bool {
+			return cmds[i].Name < cmds[j].Name
+		})
+
+		names := make(map[string]struct{})
+		for _, cmd := range cmds {
+			if _, ok := names[cmd.Name]; ok {
+				return fmt.Errorf("duplicate command %q", cmd.Name)
+			}
+			names[cmd.Name] = struct{}{}
+
+			if err := validateCommand(cmd); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -145,7 +178,7 @@ func (r *Runner) Run() error {
 	if r.errInit != nil {
 		return fmt.Errorf("acmd: cannot init runner: %w", r.errInit)
 	}
-	if err := run(r.ctx, r.cfg, r.cmds, r.args); err != nil {
+	if err := run(r.ctx, r.cfg, r.rootCmd.subcommands, r.args); err != nil {
 		return fmt.Errorf("acmd: cannot run command: %w", err)
 	}
 	return nil
