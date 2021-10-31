@@ -12,7 +12,11 @@ import (
 	"text/tabwriter"
 )
 
-var cmdNameRE = regexp.MustCompile("^[A-Za-z0-9-_]+$")
+var (
+	cmdNameRE = regexp.MustCompile("^[A-Za-z0-9-_]+$")
+
+	nopFunc = func(context.Context, []string) error { return nil }
+)
 
 // Runner of the sub-commands.
 type Runner struct {
@@ -105,7 +109,7 @@ func (r *Runner) init() error {
 	cmds := r.cmds
 	r.rootCmd = Command{
 		Name:        "root",
-		Do:          func(context.Context, []string) error { return nil },
+		Do:          nopFunc,
 		subcommands: cmds,
 	}
 	if err := validateCommand(r.rootCmd); err != nil {
@@ -185,9 +189,6 @@ func (r *Runner) Run() error {
 }
 
 func run(ctx context.Context, cfg Config, cmds []Command, args []string) error {
-	if len(args) == 0 {
-		return errors.New("no args provided")
-	}
 	selected, params := args[0], args[1:]
 
 	for _, c := range cmds {
