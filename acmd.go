@@ -87,9 +87,6 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 }
 
 func (r *Runner) init() error {
-	if len(r.cmds) == 0 {
-		return errors.New("no cmds provided")
-	}
 	if r.cfg.AppName == "" {
 		r.cfg.AppName = os.Args[0]
 	}
@@ -119,7 +116,6 @@ func (r *Runner) init() error {
 	cmds := r.cmds
 	r.rootCmd = Command{
 		Name:        "root",
-		Do:          nopFunc,
 		subcommands: cmds,
 	}
 	if err := validateCommand(r.rootCmd); err != nil {
