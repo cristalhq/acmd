@@ -240,13 +240,17 @@ func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string)
 			}
 
 			if !found {
-				if suggestion := suggestCommand(selected, cmds); suggestion != "" {
-					fmt.Fprintf(cfg.Output, "%q is not a subcommand, did you mean %q?\n", selected, suggestion)
-				}
-				return fmt.Errorf("no such command %q", selected)
+				return errNotFoundAndSuggest(cfg.Output, selected, cmds)
 			}
 		}
 	}
+}
+
+func errNotFoundAndSuggest(w io.Writer, selected string, cmds []Command) error {
+	if suggestion := suggestCommand(selected, cmds); suggestion != "" {
+		fmt.Fprintf(w, "%q is not a subcommand, did you mean %q?\n", selected, suggestion)
+	}
+	return fmt.Errorf("no such command %q", selected)
 }
 
 // suggestCommand for not found earlier command.
