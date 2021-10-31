@@ -132,3 +132,27 @@ func ExampleVersion() {
 
 	// Output: acmd-example version: the best v0.x.y
 }
+
+func ExampleAutosuggestion() {
+	testOut := os.Stdout
+	testArgs := []string{"baz"}
+
+	cmds := []acmd.Command{
+		{Name: "foo", Do: nopFunc},
+		{Name: "bar", Do: nopFunc},
+	}
+
+	r := acmd.RunnerOf(cmds, acmd.Config{
+		AppName:        "acmd-example",
+		AppDescription: "Example of acmd package",
+		Version:        "the best v0.x.y",
+		Output:         testOut,
+		Args:           testArgs,
+	})
+
+	if err := r.Run(); err == nil {
+		panic("must fail with command not found")
+	}
+
+	// Output: "baz" is not a subcommand, did you mean "bar"?
+}
