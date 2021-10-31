@@ -177,7 +177,7 @@ func validateCommand(cmd Command) error {
 	return nil
 }
 
-// Run ...
+// Run commands.
 func (r *Runner) Run() error {
 	if r.errInit != nil {
 		return fmt.Errorf("acmd: cannot init runner: %w", r.errInit)
