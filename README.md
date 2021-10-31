@@ -5,19 +5,20 @@
 [![reportcard-img]][reportcard-url]
 [![coverage-img]][coverage-url]
 
-TODO
+Simple, useful and opinionated CLI package in Go. For config loader see [aconfig](https://github.com/cristalhq/aconfig)
 
 ## Rationale
 
-TODO.
+Popular CLI libraries (or better frameworks) have too large and unclear API, in most cases, you just want to define commands for your CLI application and run them without additional work. This package does this by providing a small API, good defaults and clear code.
 
 ## Features
 
 * Simple API.
-* Easy to integrate.
-* Builtin `help` and `version` commands.
-* Clean and tested code.
 * Dependency-free.
+* Easy to integrate.
+* Clean and tested code.
+* Auto suggesting command.
+* Builtin `help` and `version` commands.
 
 ## Install
 
