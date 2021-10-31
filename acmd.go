@@ -217,10 +217,6 @@ func (r *Runner) Run() error {
 
 func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string) error {
 	return func(ctx context.Context, args []string) error {
-		if len(args) == 0 {
-			return errors.New("no args provided")
-		}
-
 		cmds, args := cmds, args
 		for {
 			selected, params := args[0], args[1:]
