@@ -64,6 +64,14 @@ func TestRunnerMustSortCommands(t *testing.T) {
 		return r.cmds[i].Name < r.cmds[j].Name
 	})
 }
+func TestRunnerPanicWithoutCommands(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("must be panic")
+		}
+	}()
+	RunnerOf(nil, Config{})
+}
 
 func TestRunnerInit(t *testing.T) {
 	testCases := []struct {
@@ -125,17 +133,17 @@ func TestRunner_suggestCommand(t *testing.T) {
 			want: `"fooo" is not a subcommand, did you mean "foo"?` + "\n",
 		},
 		{
-			cmds: []Command{},
+			cmds: []Command{{Name: "for", Do: nopFunc}},
 			args: []string{"hell"},
 			want: `"hell" is not a subcommand, did you mean "help"?` + "\n",
 		},
 		{
-			cmds: []Command{},
+			cmds: []Command{{Name: "for", Do: nopFunc}},
 			args: []string{"verZION"},
 			want: "",
 		},
 		{
-			cmds: []Command{},
+			cmds: []Command{{Name: "for", Do: nopFunc}},
 			args: []string{"verZion"},
 			want: `"verZion" is not a subcommand, did you mean "version"?` + "\n",
 		},

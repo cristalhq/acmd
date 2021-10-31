@@ -71,6 +71,10 @@ type Config struct {
 
 // RunnerOf creates a Runner.
 func RunnerOf(cmds []Command, cfg Config) *Runner {
+	if len(cmds) == 0 {
+		panic("acmd: cannot run without commands")
+	}
+
 	r := &Runner{
 		cmds: cmds,
 		cfg:  cfg,
