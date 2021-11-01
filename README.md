@@ -15,8 +15,8 @@ Popular CLI libraries (or better frameworks) have too large and unclear API, in 
 
 * Simple API.
 * Dependency-free.
-* Easy to integrate.
 * Clean and tested code.
+* Command aliases.
 * Auto suggesting command.
 * Builtin `help` and `version` commands.
 

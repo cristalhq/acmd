@@ -31,8 +31,11 @@ type Runner struct {
 
 // Command specifies a sub-command for a program's command-line interface.
 type Command struct {
-	// Name is just a one-word.
+	// Name of the command, ex: `init`
 	Name string
+
+	// Alias is an optional short second name, ex: `i`.
+	Alias string
 
 	// Description of the command.
 	Description string
@@ -158,8 +161,14 @@ func validateCommand(cmd Command) error {
 	case cmd.Name == "help" || cmd.Name == "version":
 		return fmt.Errorf("command %q is reserved", cmd.Name)
 
+	case cmd.Alias == "help" || cmd.Alias == "version":
+		return fmt.Errorf("command alias %q is reserved", cmd.Alias)
+
 	case !cmdNameRE.MatchString(cmd.Name):
 		return fmt.Errorf("command %q must contains only letters, digits, - and _", cmd.Name)
+
+	case cmd.Alias != "" && !cmdNameRE.MatchString(cmd.Alias):
+		return fmt.Errorf("command alias %q must contains only letters, digits, - and _", cmd.Alias)
 
 	case len(cmds) != 0:
 		sort.Slice(cmds, func(i, j int) bool {
@@ -171,7 +180,14 @@ func validateCommand(cmd Command) error {
 			if _, ok := names[cmd.Name]; ok {
 				return fmt.Errorf("duplicate command %q", cmd.Name)
 			}
+			if _, ok := names[cmd.Alias]; ok {
+				return fmt.Errorf("duplicate command alias %q", cmd.Alias)
+			}
+
 			names[cmd.Name] = struct{}{}
+			if cmd.Alias != "" {
+				names[cmd.Alias] = struct{}{}
+			}
 
 			if err := validateCommand(cmd); err != nil {
 				return err
@@ -196,7 +212,7 @@ func run(ctx context.Context, cfg Config, cmds []Command, args []string) error {
 	selected, params := args[0], args[1:]
 
 	for _, c := range cmds {
-		if c.Name == selected {
+		if selected == c.Name || selected == c.Alias {
 			return c.Do(ctx, params)
 		}
 	}

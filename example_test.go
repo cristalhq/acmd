@@ -133,6 +133,44 @@ func ExampleVersion() {
 	// Output: acmd-example version: the best v0.x.y
 }
 
+func ExampleAlias() {
+	testOut := os.Stdout
+	testArgs := []string{"f"}
+
+	cmds := []acmd.Command{
+		{
+			Name:  "foo",
+			Alias: "f",
+			Do: func(ctx context.Context, args []string) error {
+				fmt.Fprint(testOut, "foo")
+				return nil
+			},
+		},
+		{
+			Name:  "bar",
+			Alias: "b",
+			Do: func(ctx context.Context, args []string) error {
+				fmt.Fprint(testOut, "bar")
+				return nil
+			},
+		},
+	}
+
+	r := acmd.RunnerOf(cmds, acmd.Config{
+		AppName:        "acmd-example",
+		AppDescription: "Example of acmd package",
+		Version:        "the best v0.x.y",
+		Output:         testOut,
+		Args:           testArgs,
+	})
+
+	if err := r.Run(); err != nil {
+		panic(err)
+	}
+
+	// Output: foo
+}
+
 func ExampleAutosuggestion() {
 	testOut := os.Stdout
 	testArgs := []string{"baz"}

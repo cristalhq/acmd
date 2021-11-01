@@ -80,8 +80,16 @@ func TestRunnerInit(t *testing.T) {
 		wantErrStr string
 	}{
 		{
+			cmds:       []Command{{Name: "", Do: nopFunc}},
+			wantErrStr: `command "" must contains only letters, digits, - and _`,
+		},
+		{
 			cmds:       []Command{{Name: "foo%", Do: nopFunc}},
 			wantErrStr: `command "foo%" must contains only letters, digits, - and _`,
+		},
+		{
+			cmds:       []Command{{Name: "foo", Alias: "%", Do: nopFunc}},
+			wantErrStr: `command alias "%" must contains only letters, digits, - and _`,
 		},
 		{
 			cmds:       []Command{{Name: "foo%", Do: nil}},
@@ -103,8 +111,28 @@ func TestRunnerInit(t *testing.T) {
 			wantErrStr: `command "version" is reserved`,
 		},
 		{
+			cmds:       []Command{{Name: "foo", Alias: "help", Do: nopFunc}},
+			wantErrStr: `command alias "help" is reserved`,
+		},
+		{
+			cmds:       []Command{{Name: "foo", Alias: "version", Do: nopFunc}},
+			wantErrStr: `command alias "version" is reserved`,
+		},
+		{
 			cmds:       []Command{{Name: "a", Do: nopFunc}, {Name: "a", Do: nopFunc}},
 			wantErrStr: `duplicate command "a"`,
+		},
+		{
+			cmds:       []Command{{Name: "aaa", Do: nopFunc}, {Name: "b", Alias: "aaa", Do: nopFunc}},
+			wantErrStr: `duplicate command alias "aaa"`,
+		},
+		{
+			cmds:       []Command{{Name: "aaa", Alias: "a", Do: nopFunc}, {Name: "bbb", Alias: "a", Do: nopFunc}},
+			wantErrStr: `duplicate command alias "a"`,
+		},
+		{
+			cmds:       []Command{{Name: "a", Do: nopFunc}, {Name: "b", Alias: "a", Do: nopFunc}},
+			wantErrStr: `duplicate command alias "a"`,
 		},
 	}
 
