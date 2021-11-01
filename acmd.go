@@ -219,7 +219,7 @@ func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string)
 
 			var found bool
 			for _, c := range cmds {
-				if c.Name != selected {
+				if selected != c.Name && selected != c.Alias {
 					continue
 				}
 
