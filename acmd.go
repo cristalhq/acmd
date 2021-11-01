@@ -171,27 +171,34 @@ func validateCommand(cmd Command) error {
 		return fmt.Errorf("command alias %q must contains only letters, digits, - and _", cmd.Alias)
 
 	case len(cmds) != 0:
-		sort.Slice(cmds, func(i, j int) bool {
-			return cmds[i].Name < cmds[j].Name
-		})
+		if err := validateSubcommands(cmds); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-		names := make(map[string]struct{})
-		for _, cmd := range cmds {
-			if _, ok := names[cmd.Name]; ok {
-				return fmt.Errorf("duplicate command %q", cmd.Name)
-			}
-			if _, ok := names[cmd.Alias]; ok {
-				return fmt.Errorf("duplicate command alias %q", cmd.Alias)
-			}
+func validateSubcommands(cmds []Command) error {
+	sort.Slice(cmds, func(i, j int) bool {
+		return cmds[i].Name < cmds[j].Name
+	})
 
-			names[cmd.Name] = struct{}{}
-			if cmd.Alias != "" {
-				names[cmd.Alias] = struct{}{}
-			}
+	names := make(map[string]struct{})
+	for _, cmd := range cmds {
+		if _, ok := names[cmd.Name]; ok {
+			return fmt.Errorf("duplicate command %q", cmd.Name)
+		}
+		if _, ok := names[cmd.Alias]; ok {
+			return fmt.Errorf("duplicate command alias %q", cmd.Alias)
+		}
 
-			if err := validateCommand(cmd); err != nil {
-				return err
-			}
+		names[cmd.Name] = struct{}{}
+		if cmd.Alias != "" {
+			names[cmd.Alias] = struct{}{}
+		}
+
+		if err := validateCommand(cmd); err != nil {
+			return err
 		}
 	}
 	return nil
