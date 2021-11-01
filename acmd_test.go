@@ -11,6 +11,58 @@ import (
 	"time"
 )
 
+func TestRunner(t *testing.T) {
+	buf := &bytes.Buffer{}
+
+	cmds := []Command{
+		{
+			Name:        "test",
+			Description: "some test command",
+			Subcommands: []Command{
+				{
+					Name: "foo",
+					Subcommands: []Command{
+						{
+							Name: "for", Do: func(ctx context.Context, args []string) error {
+								fmt.Fprint(buf, "for")
+								return nil
+							},
+						},
+					},
+				},
+				{
+					Name: "bar",
+					Do: func(ctx context.Context, args []string) error {
+						fmt.Fprint(buf, "bar")
+						return nil
+					},
+				},
+			},
+		},
+		{
+			Name:        "status",
+			Description: "status command gives status of the state",
+			Do: func(ctx context.Context, args []string) error {
+				return nil
+			},
+		},
+	}
+	r := RunnerOf(cmds, Config{
+		Args:           []string{"test", "foo", "for"},
+		AppName:        "acmd_test_app",
+		AppDescription: "acmd_test_app is a test application.",
+		Version:        time.Now().String(),
+		Output:         buf,
+	})
+
+	if err := r.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if got := buf.String(); got != "for" {
+		t.Fatalf("want %q got %q", "for", got)
+	}
+}
+
 func TestRunnerMustSetDefaults(t *testing.T) {
 	cmds := []Command{{Name: "foo", Do: nopFunc}}
 	r := RunnerOf(cmds, Config{})
@@ -37,7 +89,7 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 	}
 
 	gotCmds := map[string]struct{}{}
-	for _, c := range r.rootCmd.subcommands {
+	for _, c := range r.rootCmd.Subcommands {
 		gotCmds[c.Name] = struct{}{}
 	}
 	if _, ok := gotCmds["help"]; !ok {
@@ -106,7 +158,7 @@ func TestRunnerInit(t *testing.T) {
 			cmds: []Command{{
 				Name:        "foobar",
 				Do:          nopFunc,
-				subcommands: []Command{{Name: "nested"}},
+				Subcommands: []Command{{Name: "nested"}},
 			}},
 			wantErrStr: `command "foobar" function cannot be set and have subcommands`,
 		},
@@ -205,54 +257,5 @@ func TestRunner_suggestCommand(t *testing.T) {
 		if got := buf.String(); got != tc.want {
 			t.Fatalf("want %q got %q", tc.want, got)
 		}
-	}
-}
-
-func TestRunner(t *testing.T) {
-	r := RunnerOf([]Command{
-		{
-			Name:        "test",
-			Description: "some test command",
-			// Do: func(ctx context.Context, args []string) error {
-			// 	return nil
-			// },
-			subcommands: []Command{
-				{
-					Name: "foo",
-					// Do: func(ctx context.Context, args []string) error {
-					// 	fmt.Fprint(os.Stderr, "foo")
-					// 	return nil
-					// },
-					subcommands: []Command{
-						{
-							Name: "for", Do: func(ctx context.Context, args []string) error {
-								fmt.Fprint(os.Stderr, "for")
-								return nil
-							},
-						},
-					},
-				},
-				{Name: "bar", Do: func(ctx context.Context, args []string) error {
-					fmt.Fprint(os.Stderr, "bar")
-					return nil
-				}},
-			},
-		},
-		{
-			Name:        "status",
-			Description: "status command gives status of the state",
-			Do: func(ctx context.Context, args []string) error {
-				return nil
-			},
-		},
-	}, Config{
-		Args:           []string{"test", "foo", "for"},
-		AppName:        "acmd_test_app",
-		AppDescription: "acmd_test_app is a test application.",
-		Version:        time.Now().String(),
-	})
-
-	if err := r.Run(); err != nil {
-		t.Fatal(err)
 	}
 }

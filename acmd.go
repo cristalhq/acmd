@@ -44,7 +44,7 @@ type Command struct {
 	Do func(ctx context.Context, args []string) error
 
 	// subcommands of the command.
-	subcommands []Command
+	Subcommands []Command
 }
 
 // Config for the runner.
@@ -116,7 +116,7 @@ func (r *Runner) init() error {
 	cmds := r.cmds
 	r.rootCmd = Command{
 		Name:        "root",
-		subcommands: cmds,
+		Subcommands: cmds,
 	}
 	if err := validateCommand(r.rootCmd); err != nil {
 		return err
@@ -145,14 +145,14 @@ func (r *Runner) init() error {
 		return cmds[i].Name < cmds[j].Name
 	})
 
-	r.rootCmd.subcommands = cmds
+	r.rootCmd.Subcommands = cmds
 	r.rootCmd.Do = rootDo(r.cfg, cmds)
 
 	return nil
 }
 
 func validateCommand(cmd Command) error {
-	cmds := cmd.subcommands
+	cmds := cmd.Subcommands
 
 	switch {
 	case cmd.Do == nil && len(cmds) == 0:
@@ -228,7 +228,7 @@ func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string)
 					if len(params) == 0 {
 						return errors.New("no args for subcmd provided")
 					}
-					cmds, args = c.subcommands, params
+					cmds, args = c.Subcommands, params
 					found = true
 					break
 				}
