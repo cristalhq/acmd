@@ -44,7 +44,7 @@ type Command struct {
 	Do func(ctx context.Context, args []string) error
 
 	// subcommands of the command.
-	subcommands []Command
+	Subcommands []Command
 }
 
 // Config for the runner.
@@ -116,8 +116,7 @@ func (r *Runner) init() error {
 	cmds := r.cmds
 	r.rootCmd = Command{
 		Name:        "root",
-		Do:          nopFunc,
-		subcommands: cmds,
+		Subcommands: cmds,
 	}
 	if err := validateCommand(r.rootCmd); err != nil {
 		return err
@@ -146,17 +145,21 @@ func (r *Runner) init() error {
 		return cmds[i].Name < cmds[j].Name
 	})
 
-	r.rootCmd.subcommands = cmds
+	r.rootCmd.Subcommands = cmds
+	r.rootCmd.Do = rootDo(r.cfg, cmds)
 
 	return nil
 }
 
 func validateCommand(cmd Command) error {
-	cmds := cmd.subcommands
+	cmds := cmd.Subcommands
 
 	switch {
 	case cmd.Do == nil && len(cmds) == 0:
-		return fmt.Errorf("command %q function cannot be nil", cmd.Name)
+		return fmt.Errorf("command %q function cannot be nil or must have subcommands", cmd.Name)
+
+	case cmd.Do != nil && len(cmds) != 0:
+		return fmt.Errorf("command %q function cannot be set and have subcommands", cmd.Name)
 
 	case cmd.Name == "help" || cmd.Name == "version":
 		return fmt.Errorf("command %q is reserved", cmd.Name)
@@ -209,23 +212,46 @@ func (r *Runner) Run() error {
 	if r.errInit != nil {
 		return fmt.Errorf("acmd: cannot init runner: %w", r.errInit)
 	}
-	if err := run(r.ctx, r.cfg, r.rootCmd.subcommands, r.args); err != nil {
+	if err := r.rootCmd.Do(r.ctx, r.args); err != nil {
 		return fmt.Errorf("acmd: cannot run command: %w", err)
 	}
 	return nil
 }
 
-func run(ctx context.Context, cfg Config, cmds []Command, args []string) error {
-	selected, params := args[0], args[1:]
+func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string) error {
+	return func(ctx context.Context, args []string) error {
+		cmds, args := cmds, args
+		for {
+			selected, params := args[0], args[1:]
 
-	for _, c := range cmds {
-		if selected == c.Name || selected == c.Alias {
-			return c.Do(ctx, params)
+			var found bool
+			for _, c := range cmds {
+				if selected != c.Name && selected != c.Alias {
+					continue
+				}
+
+				// go deeper into subcommands
+				if c.Do == nil {
+					if len(params) == 0 {
+						return errors.New("no args for subcmd provided")
+					}
+					cmds, args = c.Subcommands, params
+					found = true
+					break
+				}
+				return c.Do(ctx, params)
+			}
+
+			if !found {
+				return errNotFoundAndSuggest(cfg.Output, selected, cmds)
+			}
 		}
 	}
+}
 
+func errNotFoundAndSuggest(w io.Writer, selected string, cmds []Command) error {
 	if suggestion := suggestCommand(selected, cmds); suggestion != "" {
-		fmt.Fprintf(cfg.Output, "%q is not a subcommand, did you mean %q?\n", selected, suggestion)
+		fmt.Fprintf(w, "%q is not a subcommand, did you mean %q?\n", selected, suggestion)
 	}
 	return fmt.Errorf("no such command %q", selected)
 }

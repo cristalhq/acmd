@@ -194,3 +194,40 @@ func ExampleAutosuggestion() {
 
 	// Output: "baz" is not a subcommand, did you mean "bar"?
 }
+
+func ExampleNestedCommands() {
+	testOut := os.Stdout
+	testArgs := []string{"foo", "qux"}
+
+	cmds := []acmd.Command{
+		{
+			Name: "foo",
+			Subcommands: []acmd.Command{
+				{Name: "bar", Do: nopFunc},
+				{Name: "baz", Do: nopFunc},
+				{
+					Name: "qux",
+					Do: func(ctx context.Context, args []string) error {
+						fmt.Fprint(testOut, "qux")
+						return nil
+					},
+				},
+			},
+		},
+		{Name: "boom", Do: nopFunc},
+	}
+
+	r := acmd.RunnerOf(cmds, acmd.Config{
+		AppName:        "acmd-example",
+		AppDescription: "Example of acmd package",
+		Version:        "the best v0.x.y",
+		Output:         testOut,
+		Args:           testArgs,
+	})
+
+	if err := r.Run(); err != nil {
+		panic(err)
+	}
+
+	// Output: qux
+}

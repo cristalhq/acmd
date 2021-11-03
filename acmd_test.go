@@ -2,11 +2,66 @@ package acmd
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestRunner(t *testing.T) {
+	buf := &bytes.Buffer{}
+
+	cmds := []Command{
+		{
+			Name:        "test",
+			Description: "some test command",
+			Subcommands: []Command{
+				{
+					Name: "foo",
+					Subcommands: []Command{
+						{
+							Name: "for", Do: func(ctx context.Context, args []string) error {
+								fmt.Fprint(buf, "for")
+								return nil
+							},
+						},
+					},
+				},
+				{
+					Name: "bar",
+					Do: func(ctx context.Context, args []string) error {
+						fmt.Fprint(buf, "bar")
+						return nil
+					},
+				},
+			},
+		},
+		{
+			Name:        "status",
+			Description: "status command gives status of the state",
+			Do: func(ctx context.Context, args []string) error {
+				return nil
+			},
+		},
+	}
+	r := RunnerOf(cmds, Config{
+		Args:           []string{"test", "foo", "for"},
+		AppName:        "acmd_test_app",
+		AppDescription: "acmd_test_app is a test application.",
+		Version:        time.Now().String(),
+		Output:         buf,
+	})
+
+	if err := r.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if got := buf.String(); got != "for" {
+		t.Fatalf("want %q got %q", "for", got)
+	}
+}
 
 func TestRunnerMustSetDefaults(t *testing.T) {
 	cmds := []Command{{Name: "foo", Do: nopFunc}}
@@ -34,7 +89,7 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 	}
 
 	gotCmds := map[string]struct{}{}
-	for _, c := range r.rootCmd.subcommands {
+	for _, c := range r.rootCmd.Subcommands {
 		gotCmds[c.Name] = struct{}{}
 	}
 	if _, ok := gotCmds["help"]; !ok {
@@ -94,6 +149,18 @@ func TestRunnerInit(t *testing.T) {
 		{
 			cmds:       []Command{{Name: "foo%", Do: nil}},
 			wantErrStr: `command "foo%" function cannot be nil`,
+		},
+		{
+			cmds:       []Command{{Name: "foo", Do: nil}},
+			wantErrStr: `command "foo" function cannot be nil or must have subcommands`,
+		},
+		{
+			cmds: []Command{{
+				Name:        "foobar",
+				Do:          nopFunc,
+				Subcommands: []Command{{Name: "nested"}},
+			}},
+			wantErrStr: `command "foobar" function cannot be set and have subcommands`,
 		},
 		{
 			cmds: []Command{{Name: "foo", Do: nopFunc}},
@@ -183,12 +250,12 @@ func TestRunner_suggestCommand(t *testing.T) {
 			Args:   tc.args,
 			Output: buf,
 		})
-		if err := r.Run(); err == nil {
-			t.Fatal()
+		if err := r.Run(); err != nil && !strings.Contains(err.Error(), "no such command") {
+			t.Fatal(err)
 		}
 
 		if got := buf.String(); got != tc.want {
-			t.Logf("want %q got %q", tc.want, got)
+			t.Fatalf("want %q got %q", tc.want, got)
 		}
 	}
 }
