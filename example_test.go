@@ -2,6 +2,7 @@ package acmd_test
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,7 +15,7 @@ var nopFunc = func(context.Context, []string) error { return nil }
 
 func ExampleRunner() {
 	testOut := os.Stdout
-	testArgs := []string{"now"}
+	testArgs := []string{"now", "--times", "3"}
 
 	const format = "15:04:05"
 	now, _ := time.Parse("15:04:05", "10:20:30")
@@ -24,7 +25,15 @@ func ExampleRunner() {
 			Name:        "now",
 			Description: "prints current time",
 			Do: func(ctx context.Context, args []string) error {
-				fmt.Printf("now: %s\n", now.Format(format))
+				fs := flag.NewFlagSet("some name for help", flag.ContinueOnError)
+				times := fs.Int("times", 1, "how many times to print time")
+				if err := fs.Parse(args); err != nil {
+					return err
+				}
+
+				for i := 0; i < *times; i++ {
+					fmt.Printf("now: %s\n", now.Format(format))
+				}
 				return nil
 			},
 		},
@@ -38,7 +47,7 @@ func ExampleRunner() {
 					return err
 				}
 				defer resp.Body.Close()
-				fmt.Print()
+				// TODO: parse response, I don't know
 				return nil
 			},
 		},
@@ -56,7 +65,10 @@ func ExampleRunner() {
 		panic(err)
 	}
 
-	// Output: now: 10:20:30
+	// Output:
+	// now: 10:20:30
+	// now: 10:20:30
+	// now: 10:20:30
 }
 
 func ExampleHelp() {
