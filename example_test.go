@@ -11,14 +11,17 @@ import (
 	"github.com/cristalhq/acmd"
 )
 
-var nopFunc = func(context.Context, []string) error { return nil }
+var (
+	nopFunc  = func(context.Context, []string) error { return nil }
+	nopUsage = func(cfg acmd.Config, cmds []acmd.Command) {}
+)
 
 func ExampleRunner() {
 	testOut := os.Stdout
 	testArgs := []string{"now", "--times", "3"}
 
 	const format = "15:04:05"
-	now, _ := time.Parse("15:04:05", "10:20:30")
+	now, _ := time.Parse(format, "10:20:30")
 
 	cmds := []acmd.Command{
 		{
@@ -59,6 +62,7 @@ func ExampleRunner() {
 		Version:        "the best v0.x.y",
 		Output:         testOut,
 		Args:           testArgs,
+		Usage:          nopUsage,
 	})
 
 	if err := r.Run(); err != nil {
@@ -136,6 +140,7 @@ func ExampleVersion() {
 		Version:        "the best v0.x.y",
 		Output:         testOut,
 		Args:           testArgs,
+		Usage:          nopUsage,
 	})
 
 	if err := r.Run(); err != nil {
@@ -174,6 +179,7 @@ func ExampleAlias() {
 		Version:        "the best v0.x.y",
 		Output:         testOut,
 		Args:           testArgs,
+		Usage:          nopUsage,
 	})
 
 	if err := r.Run(); err != nil {
@@ -198,13 +204,16 @@ func ExampleAutosuggestion() {
 		Version:        "the best v0.x.y",
 		Output:         testOut,
 		Args:           testArgs,
+		Usage:          nopUsage,
 	})
 
 	if err := r.Run(); err == nil {
 		panic("must fail with command not found")
 	}
 
-	// Output: "baz" is not a subcommand, did you mean "bar"?
+	// Output:
+	// "baz" unknown command, did you mean "bar"?
+	// Run "acmd-example help" for usage.
 }
 
 func ExampleNestedCommands() {

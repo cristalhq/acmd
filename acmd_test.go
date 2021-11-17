@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 )
+
+var nopUsage = func(cfg Config, cmds []Command) {}
 
 func TestRunner(t *testing.T) {
 	buf := &bytes.Buffer{}
@@ -65,13 +68,16 @@ func TestRunner(t *testing.T) {
 
 func TestRunnerMustSetDefaults(t *testing.T) {
 	cmds := []Command{{Name: "foo", Do: nopFunc}}
-	r := RunnerOf(cmds, Config{})
+	r := RunnerOf(cmds, Config{
+		Output: io.Discard,
+		Usage:  nopUsage,
+	})
 
 	err := r.Run()
 	if err == nil {
 		t.Fatal()
 	}
-	if errStr := err.Error(); !strings.Contains(errStr, "acmd: cannot run command: no such command") {
+	if errStr := err.Error(); !strings.Contains(errStr, "cannot run command: no such command") {
 		t.Fatal(err)
 	}
 
@@ -80,9 +86,6 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 	}
 	if r.ctx == nil {
 		t.Fatal("context must be set")
-	}
-	if r.cfg.Output != os.Stderr {
-		t.Fatal("incorrect output")
 	}
 	if r.cfg.Usage == nil {
 		t.Fatal("usage nust be set")
@@ -225,30 +228,32 @@ func TestRunner_suggestCommand(t *testing.T) {
 				{Name: "bar", Do: nopFunc},
 			},
 			args: []string{"fooo"},
-			want: `"fooo" is not a subcommand, did you mean "foo"?` + "\n",
+			want: `"fooo" unknown command, did you mean "foo"?` + "\n" + `Run "ci help" for usage.` + "\n\n",
 		},
 		{
 			cmds: []Command{{Name: "for", Do: nopFunc}},
 			args: []string{"hell"},
-			want: `"hell" is not a subcommand, did you mean "help"?` + "\n",
+			want: `"hell" unknown command, did you mean "help"?` + "\n" + `Run "ci help" for usage.` + "\n\n",
 		},
 		{
 			cmds: []Command{{Name: "for", Do: nopFunc}},
 			args: []string{"verZION"},
-			want: "",
+			want: `"verZION" unknown command` + "\n" + `Run "ci help" for usage.` + "\n\n",
 		},
 		{
 			cmds: []Command{{Name: "for", Do: nopFunc}},
 			args: []string{"verZion"},
-			want: `"verZion" is not a subcommand, did you mean "version"?` + "\n",
+			want: `"verZion" unknown command, did you mean "version"?` + "\n" + `Run "ci help" for usage.` + "\n\n",
 		},
 	}
 
 	for _, tc := range testCases {
 		buf := &bytes.Buffer{}
 		r := RunnerOf(tc.cmds, Config{
-			Args:   tc.args,
-			Output: buf,
+			Args:    tc.args,
+			AppName: "ci",
+			Output:  buf,
+			Usage:   nopUsage,
 		})
 		if err := r.Run(); err != nil && !strings.Contains(err.Error(), "no such command") {
 			t.Fatal(err)

@@ -210,10 +210,10 @@ func validateSubcommands(cmds []Command) error {
 // Run commands.
 func (r *Runner) Run() error {
 	if r.errInit != nil {
-		return fmt.Errorf("acmd: cannot init runner: %w", r.errInit)
+		return fmt.Errorf("cannot init runner: %w", r.errInit)
 	}
 	if err := r.rootCmd.Do(r.ctx, r.args); err != nil {
-		return fmt.Errorf("acmd: cannot run command: %w", err)
+		return fmt.Errorf("cannot run command: %w", err)
 	}
 	return nil
 }
@@ -233,7 +233,7 @@ func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string)
 				// go deeper into subcommands
 				if c.Do == nil {
 					if len(params) == 0 {
-						return errors.New("no args for subcmd provided")
+						return errors.New("no args for command provided")
 					}
 					cmds, args = c.Subcommands, params
 					found = true
@@ -243,16 +243,20 @@ func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string)
 			}
 
 			if !found {
-				return errNotFoundAndSuggest(cfg.Output, selected, cmds)
+				return errNotFoundAndSuggest(cfg.Output, cfg.AppName, selected, cmds)
 			}
 		}
 	}
 }
 
-func errNotFoundAndSuggest(w io.Writer, selected string, cmds []Command) error {
-	if suggestion := suggestCommand(selected, cmds); suggestion != "" {
-		fmt.Fprintf(w, "%q is not a subcommand, did you mean %q?\n", selected, suggestion)
+func errNotFoundAndSuggest(w io.Writer, appName, selected string, cmds []Command) error {
+	suggestion := suggestCommand(selected, cmds)
+	if suggestion != "" {
+		fmt.Fprintf(w, "%q unknown command, did you mean %q?\n", selected, suggestion)
+	} else {
+		fmt.Fprintf(w, "%q unknown command\n", selected)
 	}
+	fmt.Fprintf(w, "Run %q for usage.\n\n", appName+" help")
 	return fmt.Errorf("no such command %q", selected)
 }
 
