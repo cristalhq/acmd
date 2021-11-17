@@ -4,6 +4,7 @@
 [![pkg-img]][pkg-url]
 [![reportcard-img]][reportcard-url]
 [![coverage-img]][coverage-url]
+[![version-img]][version-url]
 
 Simple, useful and opinionated CLI package in Go. For config loader see [aconfig](https://github.com/cristalhq/aconfig)
 
@@ -83,3 +84,5 @@ See [these docs][pkg-url].
 [reportcard-url]: https://goreportcard.com/report/cristalhq/acmd
 [coverage-img]: https://codecov.io/gh/cristalhq/acmd/branch/main/graph/badge.svg
 [coverage-url]: https://codecov.io/gh/cristalhq/acmd
+[version-img]: https://img.shields.io/github/v/release/cristalhq/acmd
+[version-url]: https://github.com/cristalhq/acmd/releases
