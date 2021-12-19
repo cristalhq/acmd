@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"regexp"
 	"sort"
+	"syscall"
 	"text/tabwriter"
 )
 
@@ -62,7 +63,7 @@ type Config struct {
 	// Exported for testing purpose only, if nil os.Stderr is used.
 	Output io.Writer
 
-	// Context for commands, if nil context based on os.Interrupt will be used.
+	// Context for commands, if nil context based on os.Interrupt and syscall.SIGTERM will be used.
 	Context context.Context
 
 	// Args passed to the executable, if nil os.Args[1:] will be used.
@@ -101,8 +102,8 @@ func (r *Runner) init() error {
 
 	r.ctx = r.cfg.Context
 	if r.ctx == nil {
-		// ok to ignore cancel func because os.Interrupt is already almost os.Exit
-		r.ctx, _ = signal.NotifyContext(context.Background(), os.Interrupt)
+		// ok to ignore cancel func because os.Interrupt and syscall.SIGTERM is already almost os.Exit
+		r.ctx, _ = signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	}
 
 	if r.cfg.Output == nil {
