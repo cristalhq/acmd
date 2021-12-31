@@ -47,7 +47,7 @@ type Command struct {
 	// subcommands of the command.
 	Subcommands []Command
 
-	// IsHidden reports whether command should be show in help. Default false.
+	// IsHidden reports whether command should not be show in help. Default false.
 	IsHidden bool
 }
 
