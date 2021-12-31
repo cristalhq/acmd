@@ -46,6 +46,9 @@ type Command struct {
 
 	// subcommands of the command.
 	Subcommands []Command
+
+	// IsHidden reports whether command should not be show in help. Default false.
+	IsHidden bool
 }
 
 // Config for the runner.
@@ -297,6 +300,9 @@ func printCommands(w io.Writer, cmds []Command) {
 	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
 	tw := tabwriter.NewWriter(w, minwidth, tabwidth, padding, padchar, flags)
 	for _, cmd := range cmds {
+		if cmd.IsHidden {
+			continue
+		}
 		desc := cmd.Description
 		if desc == "" {
 			desc = "<no description>"

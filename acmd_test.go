@@ -264,3 +264,24 @@ func TestRunner_suggestCommand(t *testing.T) {
 		}
 	}
 }
+
+func TestCommand_IsHidden(t *testing.T) {
+	buf := &bytes.Buffer{}
+	cmds := []Command{
+		{Name: "for", Do: nopFunc},
+		{Name: "foo", Do: nopFunc, IsHidden: true},
+		{Name: "bar", Do: nopFunc},
+	}
+	r := RunnerOf(cmds, Config{
+		Args:    []string{"help"},
+		AppName: "ci",
+		Output:  buf,
+	})
+	if err := r.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	if strings.Contains(buf.String(), "foo") {
+		t.Fatal("should not show foo")
+	}
+}
