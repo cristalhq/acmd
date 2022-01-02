@@ -265,6 +265,23 @@ func TestRunner_suggestCommand(t *testing.T) {
 	}
 }
 
+func TestHasHelpFlag(t *testing.T) {
+	testCases := []struct {
+		args    []string
+		hasHelp bool
+	}{
+		{[]string{"foo", "bar"}, false},
+		{[]string{"foo", "-help"}, true},
+		{[]string{"foo", "-h", "baz"}, true},
+		{[]string{"--help", "-h", "baz"}, true},
+	}
+	for _, tc := range testCases {
+		if got := HasHelpFlag(tc.args); got != tc.hasHelp {
+			t.Fatalf("got %v, want %v", got, tc.hasHelp)
+		}
+	}
+}
+
 func TestCommand_IsHidden(t *testing.T) {
 	buf := &bytes.Buffer{}
 	cmds := []Command{

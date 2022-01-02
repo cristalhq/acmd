@@ -76,6 +76,17 @@ type Config struct {
 	Usage func(cfg Config, cmds []Command)
 }
 
+// HasHelpFlag reports whether help flag is presented in args.
+func HasHelpFlag(flags []string) bool {
+	for _, f := range flags {
+		switch f {
+		case "-h", "-help", "--help":
+			return true
+		}
+	}
+	return false
+}
+
 // RunnerOf creates a Runner.
 func RunnerOf(cmds []Command, cfg Config) *Runner {
 	if len(cmds) == 0 {
