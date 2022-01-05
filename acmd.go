@@ -7,17 +7,12 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"regexp"
 	"sort"
 	"syscall"
 	"text/tabwriter"
 )
 
-var (
-	cmdNameRE = regexp.MustCompile("^[A-Za-z0-9-_]+$")
-
-	nopFunc = func(context.Context, []string) error { return nil }
-)
+var nopFunc = func(context.Context, []string) error { return nil }
 
 // Runner of the sub-commands.
 type Runner struct {
@@ -182,10 +177,10 @@ func validateCommand(cmd Command) error {
 	case cmd.Alias == "help" || cmd.Alias == "version":
 		return fmt.Errorf("command alias %q is reserved", cmd.Alias)
 
-	case !cmdNameRE.MatchString(cmd.Name):
+	case !isStringValid(cmd.Name):
 		return fmt.Errorf("command %q must contains only letters, digits, - and _", cmd.Name)
 
-	case cmd.Alias != "" && !cmdNameRE.MatchString(cmd.Alias):
+	case cmd.Alias != "" && !isStringValid(cmd.Alias):
 		return fmt.Errorf("command alias %q must contains only letters, digits, - and _", cmd.Alias)
 
 	case len(cmds) != 0:
@@ -220,6 +215,19 @@ func validateSubcommands(cmds []Command) error {
 		}
 	}
 	return nil
+}
+
+func isStringValid(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for _, c := range s {
+		if !(('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') ||
+			('0' <= c && c <= '9') || c == '-' || c == '_') {
+			return false
+		}
+	}
+	return true
 }
 
 // Run commands.
