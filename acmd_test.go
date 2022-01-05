@@ -12,7 +12,10 @@ import (
 	"time"
 )
 
-var nopUsage = func(cfg Config, cmds []Command) {}
+var (
+	nopFunc  = func(context.Context, []string) error { return nil }
+	nopUsage = func(cfg Config, cmds []Command) {}
+)
 
 func TestRunner(t *testing.T) {
 	buf := &bytes.Buffer{}
@@ -67,8 +70,10 @@ func TestRunner(t *testing.T) {
 }
 
 func TestRunnerMustSetDefaults(t *testing.T) {
+	args := append([]string{"runner"}, os.Args[1:]...)
 	cmds := []Command{{Name: "foo", Do: nopFunc}}
 	r := RunnerOf(cmds, Config{
+		Args:   args,
 		Output: io.Discard,
 		Usage:  nopUsage,
 	})
@@ -77,7 +82,7 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 	if err == nil {
 		t.Fatal()
 	}
-	if errStr := err.Error(); !strings.Contains(errStr, "cannot run command: no such command") {
+	if errStr := err.Error(); !strings.Contains(errStr, `no such command "runner"`) {
 		t.Fatal(err)
 	}
 
@@ -92,7 +97,7 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 	}
 
 	gotCmds := map[string]struct{}{}
-	for _, c := range r.rootCmd.Subcommands {
+	for _, c := range r.cmds {
 		gotCmds[c.Name] = struct{}{}
 	}
 	if _, ok := gotCmds["help"]; !ok {

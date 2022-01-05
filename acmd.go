@@ -12,17 +12,14 @@ import (
 	"text/tabwriter"
 )
 
-var nopFunc = func(context.Context, []string) error { return nil }
-
 // Runner of the sub-commands.
 type Runner struct {
 	cfg     Config
 	cmds    []Command
 	errInit error
 
-	ctx     context.Context
-	rootCmd Command
-	args    []string
+	ctx  context.Context
+	args []string
 }
 
 // Command specifies a sub-command for a program's command-line interface.
@@ -123,21 +120,20 @@ func (r *Runner) init() error {
 		r.cfg.Usage = defaultUsage(r.cfg.Output)
 	}
 
-	cmds := r.cmds
-	r.rootCmd = Command{
+	fakeRootCmd := Command{
 		Name:        "root",
-		Subcommands: cmds,
+		Subcommands: r.cmds,
 	}
-	if err := validateCommand(r.rootCmd); err != nil {
+	if err := validateCommand(fakeRootCmd); err != nil {
 		return err
 	}
 
-	cmds = append(cmds,
+	r.cmds = append(r.cmds,
 		Command{
 			Name:        "help",
 			Description: "shows help message",
 			Do: func(ctx context.Context, args []string) error {
-				r.cfg.Usage(r.cfg, cmds)
+				r.cfg.Usage(r.cfg, r.cmds)
 				return nil
 			},
 		},
@@ -151,13 +147,9 @@ func (r *Runner) init() error {
 		},
 	)
 
-	sort.Slice(cmds, func(i, j int) bool {
-		return cmds[i].Name < cmds[j].Name
+	sort.Slice(r.cmds, func(i, j int) bool {
+		return r.cmds[i].Name < r.cmds[j].Name
 	})
-
-	r.rootCmd.Subcommands = cmds
-	r.rootCmd.Do = rootDo(r.cfg, cmds)
-
 	return nil
 }
 
@@ -235,39 +227,40 @@ func (r *Runner) Run() error {
 	if r.errInit != nil {
 		return fmt.Errorf("cannot init runner: %w", r.errInit)
 	}
-	if err := r.rootCmd.Do(r.ctx, r.args); err != nil {
+	cmd, params, err := findCmd(r.cfg, r.cmds, r.args)
+	if err != nil {
+		return err
+	}
+	if err := cmd(r.ctx, params); err != nil {
 		return fmt.Errorf("cannot run command: %w", err)
 	}
 	return nil
 }
 
-func rootDo(cfg Config, cmds []Command) func(ctx context.Context, args []string) error {
-	return func(ctx context.Context, args []string) error {
-		cmds, args := cmds, args
-		for {
-			selected, params := args[0], args[1:]
+func findCmd(cfg Config, cmds []Command, args []string) (func(ctx context.Context, args []string) error, []string, error) {
+	for {
+		selected, params := args[0], args[1:]
 
-			var found bool
-			for _, c := range cmds {
-				if selected != c.Name && selected != c.Alias {
-					continue
-				}
-
-				// go deeper into subcommands
-				if c.Do == nil {
-					if len(params) == 0 {
-						return errors.New("no args for command provided")
-					}
-					cmds, args = c.Subcommands, params
-					found = true
-					break
-				}
-				return c.Do(ctx, params)
+		var found bool
+		for _, c := range cmds {
+			if selected != c.Name && selected != c.Alias {
+				continue
 			}
 
-			if !found {
-				return errNotFoundAndSuggest(cfg.Output, cfg.AppName, selected, cmds)
+			// go deeper into subcommands
+			if c.Do == nil {
+				if len(params) == 0 {
+					return nil, nil, errors.New("no args for command provided")
+				}
+				cmds, args = c.Subcommands, params
+				found = true
+				break
 			}
+			return c.Do, params, nil
+		}
+
+		if !found {
+			return nil, nil, errNotFoundAndSuggest(cfg.Output, cfg.AppName, selected, cmds)
 		}
 	}
 }
