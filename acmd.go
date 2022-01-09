@@ -51,6 +51,9 @@ type Config struct {
 	// AppDescription is an optional description. default is empty.
 	AppDescription string
 
+	// PostDescription of the command. Is shown after a help.
+	PostDescription string
+
 	// Version of the application.
 	Version string
 
@@ -301,6 +304,9 @@ func defaultUsage(w io.Writer) func(cfg Config, cmds []Command) {
 		fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments...]\n\nThe commands are:\n\n", cfg.AppName)
 		printCommands(w, cmds)
 
+		if cfg.PostDescription != "" {
+			fmt.Fprintf(w, "%s\n\n", cfg.PostDescription)
+		}
 		if cfg.Version != "" {
 			fmt.Fprintf(w, "Version: %s\n\n", cfg.Version)
 		}

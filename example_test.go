@@ -57,12 +57,13 @@ func ExampleRunner() {
 	}
 
 	r := acmd.RunnerOf(cmds, acmd.Config{
-		AppName:        "acmd-example",
-		AppDescription: "Example of acmd package",
-		Version:        "the best v0.x.y",
-		Output:         testOut,
-		Args:           testArgs,
-		Usage:          nopUsage,
+		AppName:         "acmd-example",
+		AppDescription:  "Example of acmd package",
+		PostDescription: "Best place to add examples",
+		Version:         "the best v0.x.y",
+		Output:          testOut,
+		Args:            testArgs,
+		Usage:           nopUsage,
 	})
 
 	if err := r.Run(); err != nil {
@@ -97,11 +98,12 @@ func ExampleHelp() {
 	}
 
 	r := acmd.RunnerOf(cmds, acmd.Config{
-		AppName:        "acmd-example",
-		AppDescription: "Example of acmd package",
-		Version:        "the best v0.x.y",
-		Output:         testOut,
-		Args:           testArgs,
+		AppName:         "acmd-example",
+		AppDescription:  "Example of acmd package",
+		PostDescription: "Best place to add examples.",
+		Version:         "the best v0.x.y",
+		Output:          testOut,
+		Args:            testArgs,
 	})
 
 	if err := r.Run(); err != nil {
@@ -121,6 +123,8 @@ func ExampleHelp() {
 	//     now               prints current time
 	//     status            prints status of the system
 	//     version           shows version of the application
+	//
+	// Best place to add examples.
 	//
 	// Version: the best v0.x.y
 }
