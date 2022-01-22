@@ -99,7 +99,10 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 	return r
 }
 
-// Exit the application.
+// Exit the application depending on the error.
+// If err is nil, so successful/no error exit is done: os.Exit(0)
+// If err is of type ErrCode: code from the error is returned: os.Exit(code)
+// Otherwise: os.Exit(1).
 func (r *Runner) Exit(err error) {
 	if err == nil {
 		os.Exit(0)

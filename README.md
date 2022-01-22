@@ -62,7 +62,7 @@ r := acmd.RunnerOf(cmds, acmd.Config{
 })
 
 if err := r.Run(); err != nil {
-	panic(err)
+	r.Exit(err)
 }
 ```
 
