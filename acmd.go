@@ -67,7 +67,7 @@ type Config struct {
 	// Args passed to the executable, if nil os.Args[1:] will be used.
 	Args []string
 
-	// Usage of the application, if nil default will be used,
+	// Usage of the application, if nil default will be used.
 	Usage func(cfg Config, cmds []Command)
 }
 
@@ -94,6 +94,15 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 	}
 	r.errInit = r.init()
 	return r
+}
+
+// Exit the application.
+func (r *Runner) Exit(err error) {
+	if err == nil {
+		return
+	}
+	fmt.Printf("%s: %s\n", r.cfg.AppName, err.Error())
+	os.Exit(1)
 }
 
 func (r *Runner) init() error {
