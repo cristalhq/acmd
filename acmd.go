@@ -12,6 +12,9 @@ import (
 	"text/tabwriter"
 )
 
+// changed only in tests.
+var doExit = os.Exit
+
 // Runner of the sub-commands.
 type Runner struct {
 	cfg     Config
@@ -101,8 +104,11 @@ func (r *Runner) Exit(err error) {
 	if err == nil {
 		return
 	}
-	fmt.Printf("%s: %s\n", r.cfg.AppName, err.Error())
-	os.Exit(1)
+	errCode := ErrCode(1)
+	errors.As(err, &errCode)
+
+	fmt.Fprintf(r.cfg.Output, "%s: %s\n", r.cfg.AppName, err.Error())
+	doExit(int(errCode))
 }
 
 func (r *Runner) init() error {
@@ -237,14 +243,14 @@ func isStringValid(s string) bool {
 // Run commands.
 func (r *Runner) Run() error {
 	if r.errInit != nil {
-		return fmt.Errorf("cannot init runner: %w", r.errInit)
+		return fmt.Errorf("init error: %w", r.errInit)
 	}
 	cmd, params, err := findCmd(r.cfg, r.cmds, r.args)
 	if err != nil {
 		return err
 	}
 	if err := cmd(r.ctx, params); err != nil {
-		return fmt.Errorf("cannot run command: %w", err)
+		return fmt.Errorf("got error: %w", err)
 	}
 	return nil
 }
