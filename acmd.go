@@ -12,6 +12,9 @@ import (
 	"text/tabwriter"
 )
 
+// changed only in tests.
+var doExit = os.Exit
+
 // Runner of the sub-commands.
 type Runner struct {
 	cfg     Config
@@ -67,7 +70,7 @@ type Config struct {
 	// Args passed to the executable, if nil os.Args[1:] will be used.
 	Args []string
 
-	// Usage of the application, if nil default will be used,
+	// Usage of the application, if nil default will be used.
 	Usage func(cfg Config, cmds []Command)
 }
 
@@ -94,6 +97,21 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 	}
 	r.errInit = r.init()
 	return r
+}
+
+// Exit the application depending on the error.
+// If err is nil, so successful/no error exit is done: os.Exit(0)
+// If err is of type ErrCode: code from the error is returned: os.Exit(code)
+// Otherwise: os.Exit(1).
+func (r *Runner) Exit(err error) {
+	if err == nil {
+		os.Exit(0)
+	}
+	errCode := ErrCode(1)
+	errors.As(err, &errCode)
+
+	fmt.Fprintf(r.cfg.Output, "%s: %s\n", r.cfg.AppName, err.Error())
+	doExit(int(errCode))
 }
 
 func (r *Runner) init() error {
@@ -228,14 +246,14 @@ func isStringValid(s string) bool {
 // Run commands.
 func (r *Runner) Run() error {
 	if r.errInit != nil {
-		return fmt.Errorf("cannot init runner: %w", r.errInit)
+		return fmt.Errorf("init error: %w", r.errInit)
 	}
 	cmd, params, err := findCmd(r.cfg, r.cmds, r.args)
 	if err != nil {
 		return err
 	}
 	if err := cmd(r.ctx, params); err != nil {
-		return fmt.Errorf("cannot run command: %w", err)
+		return fmt.Errorf("got error: %w", err)
 	}
 	return nil
 }
