@@ -102,7 +102,7 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 // Exit the application.
 func (r *Runner) Exit(err error) {
 	if err == nil {
-		return
+		os.Exit(0)
 	}
 	errCode := ErrCode(1)
 	errors.As(err, &errCode)
