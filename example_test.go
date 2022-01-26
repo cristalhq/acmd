@@ -18,7 +18,7 @@ var (
 
 func ExampleRunner() {
 	testOut := os.Stdout
-	testArgs := []string{"now", "--times", "3"}
+	testArgs := []string{"someapp", "now", "--times", "3"}
 
 	const format = "15:04:05"
 	now, _ := time.Parse(format, "10:20:30")
@@ -78,7 +78,7 @@ func ExampleRunner() {
 
 func ExampleHelp() {
 	testOut := os.Stdout
-	testArgs := []string{"help"}
+	testArgs := []string{"someapp", "help"}
 
 	cmds := []acmd.Command{
 		{
@@ -131,7 +131,7 @@ func ExampleHelp() {
 
 func ExampleVersion() {
 	testOut := os.Stdout
-	testArgs := []string{"version"}
+	testArgs := []string{"someapp", "version"}
 
 	cmds := []acmd.Command{
 		{Name: "foo", Do: nopFunc},
@@ -156,7 +156,7 @@ func ExampleVersion() {
 
 func ExampleAlias() {
 	testOut := os.Stdout
-	testArgs := []string{"f"}
+	testArgs := []string{"someapp", "f"}
 
 	cmds := []acmd.Command{
 		{
@@ -195,7 +195,7 @@ func ExampleAlias() {
 
 func ExampleAutosuggestion() {
 	testOut := os.Stdout
-	testArgs := []string{"baz"}
+	testArgs := []string{"someapp", "baz"}
 
 	cmds := []acmd.Command{
 		{Name: "foo", Do: nopFunc},
@@ -222,7 +222,7 @@ func ExampleAutosuggestion() {
 
 func ExampleNestedCommands() {
 	testOut := os.Stdout
-	testArgs := []string{"foo", "qux"}
+	testArgs := []string{"someapp", "foo", "qux"}
 
 	cmds := []acmd.Command{
 		{

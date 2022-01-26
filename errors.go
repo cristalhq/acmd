@@ -1,6 +1,13 @@
 package acmd
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var (
+	ErrNoArgs = errors.New("no args provided")
+)
 
 // ErrCode contains an int to be returned as an exit code.
 type ErrCode int

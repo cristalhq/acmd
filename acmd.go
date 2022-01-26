@@ -115,17 +115,21 @@ func (r *Runner) Exit(err error) {
 }
 
 func (r *Runner) init() error {
-	if r.cfg.AppName == "" {
-		r.cfg.AppName = os.Args[0]
-	}
-
 	r.args = r.cfg.Args
 	if r.args == nil {
-		r.args = os.Args[1:]
+		r.args = os.Args
+	} else if len(r.args) == 0 {
+		return ErrNoArgs
 	}
+
+	if r.cfg.AppName == "" {
+		r.cfg.AppName = r.args[0]
+	}
+
 	if len(r.args) == 0 {
-		return errors.New("no args provided")
+		return ErrNoArgs
 	}
+	r.args = r.args[1:]
 
 	r.ctx = r.cfg.Context
 	if r.ctx == nil {
