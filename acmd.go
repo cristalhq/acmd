@@ -72,6 +72,17 @@ type Config struct {
 
 	// Usage of the application, if nil default will be used.
 	Usage func(cfg Config, cmds []Command)
+
+	// AutoCompleteCommand by default is empty this means disabled.
+	// If you want to enable autocomplete command set a name for this command, example: "completion".
+	// After that you can run your application with a shell name flag (bash, fish, power, zsh) to install autocomplete script.
+	//
+	// Examples:
+	// bash:  echo 'source <(myapp completion -bash)' >> ~/.bash_profile
+	// fish:  myapp completion -fish | source
+	// power: myapp completion -power | Out-String | Invoke-Expression
+	// zsh:   source <(myapp completion -zsh)
+	AutoCompleteCommand string
 }
 
 // HasHelpFlag reports whether help flag is presented in args.
@@ -171,6 +182,19 @@ func (r *Runner) init() error {
 			},
 		},
 	)
+
+	if r.cfg.AutoCompleteCommand != "" {
+		r.cmds = append(r.cmds,
+			Command{
+				Name:     r.cfg.AutoCompleteCommand,
+				IsHidden: true,
+				// Do:       r.completeCmd,
+			}, Command{
+				Name:     "__complete",
+				IsHidden: true,
+				// Do:       r.completeCmd,
+			})
+	}
 
 	sort.Slice(r.cmds, func(i, j int) bool {
 		return r.cmds[i].Name < r.cmds[j].Name
