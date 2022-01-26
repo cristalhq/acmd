@@ -54,7 +54,7 @@ func TestRunner(t *testing.T) {
 		},
 	}
 	r := RunnerOf(cmds, Config{
-		Args:           []string{"someapp", "test", "foo", "for"},
+		Args:           []string{"./someapp", "test", "foo", "for"},
 		AppName:        "myapp",
 		AppDescription: "myapp is a test application.",
 		Version:        time.Now().String(),
@@ -70,7 +70,7 @@ func TestRunner(t *testing.T) {
 }
 
 func TestRunnerMustSetDefaults(t *testing.T) {
-	app := "someapp"
+	app := "./someapp"
 	args := append([]string{app, "runner"}, os.Args[1:]...)
 	cmds := []Command{{Name: "foo", Do: nopFunc}}
 	r := RunnerOf(cmds, Config{
@@ -109,6 +109,24 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 	}
 }
 
+func TestRunnerWithoutArgs(t *testing.T) {
+	cmds := []Command{{Name: "foo", Do: nopFunc}}
+	r := RunnerOf(cmds, Config{
+		Args:   []string{"./app"},
+		Output: io.Discard,
+		Usage:  nopUsage,
+	})
+
+	err := r.Run()
+	if err == nil {
+		t.Fatal("must be error")
+	}
+	want := "init error: no args provided"
+	if got := err.Error(); got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
+
 func TestRunnerMustSortCommands(t *testing.T) {
 	cmds := []Command{
 		{Name: "foo", Do: nopFunc},
@@ -117,7 +135,7 @@ func TestRunnerMustSortCommands(t *testing.T) {
 		{Name: "foo2", Do: nopFunc},
 	}
 	r := RunnerOf(cmds, Config{
-		Args: []string{"someapp", "foo"},
+		Args: []string{"./someapp", "foo"},
 	})
 
 	if err := r.Run(); err != nil {
@@ -234,22 +252,22 @@ func TestRunner_suggestCommand(t *testing.T) {
 				{Name: "foo", Do: nopFunc},
 				{Name: "bar", Do: nopFunc},
 			},
-			args: []string{"someapp", "fooo"},
+			args: []string{"./someapp", "fooo"},
 			want: `"fooo" unknown command, did you mean "foo"?` + "\n" + `Run "myapp help" for usage.` + "\n\n",
 		},
 		{
 			cmds: []Command{{Name: "for", Do: nopFunc}},
-			args: []string{"someapp", "hell"},
+			args: []string{"./someapp", "hell"},
 			want: `"hell" unknown command, did you mean "help"?` + "\n" + `Run "myapp help" for usage.` + "\n\n",
 		},
 		{
 			cmds: []Command{{Name: "for", Do: nopFunc}},
-			args: []string{"someapp", "verZION"},
+			args: []string{"./someapp", "verZION"},
 			want: `"verZION" unknown command` + "\n" + `Run "myapp help" for usage.` + "\n\n",
 		},
 		{
 			cmds: []Command{{Name: "for", Do: nopFunc}},
-			args: []string{"someapp", "verZion"},
+			args: []string{"./someapp", "verZion"},
 			want: `"verZion" unknown command, did you mean "version"?` + "\n" + `Run "myapp help" for usage.` + "\n\n",
 		},
 	}
@@ -297,7 +315,7 @@ func TestCommand_IsHidden(t *testing.T) {
 		{Name: "bar", Do: nopFunc},
 	}
 	r := RunnerOf(cmds, Config{
-		Args:    []string{"someapp", "help"},
+		Args:    []string{"./someapp", "help"},
 		AppName: "myapp",
 		Output:  buf,
 	})
@@ -326,7 +344,7 @@ func TestExit(t *testing.T) {
 	buf := &bytes.Buffer{}
 	r := RunnerOf(cmds, Config{
 		AppName: "myapp",
-		Args:    []string{"someapp", "for"},
+		Args:    []string{"./someapp", "for"},
 		Output:  buf,
 	})
 

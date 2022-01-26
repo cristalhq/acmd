@@ -126,10 +126,10 @@ func (r *Runner) init() error {
 		r.cfg.AppName = r.args[0]
 	}
 
+	r.args = r.args[1:]
 	if len(r.args) == 0 {
 		return ErrNoArgs
 	}
-	r.args = r.args[1:]
 
 	r.ctx = r.cfg.Context
 	if r.ctx == nil {
