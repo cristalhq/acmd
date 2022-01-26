@@ -130,10 +130,16 @@ func TestRunnerWithoutArgs(t *testing.T) {
 func TestRunnerMustSortCommands(t *testing.T) {
 	cmds := []Command{
 		{Name: "foo", Do: nopFunc},
-		{Name: "xyz", Do: nopFunc},
+		{Name: "xyz"},
 		{Name: "cake", Do: nopFunc},
 		{Name: "foo2", Do: nopFunc},
 	}
+	cmds[1].Subcommands = []Command{
+		{Name: "a", Do: nopFunc},
+		{Name: "c", Do: nopFunc},
+		{Name: "b", Do: nopFunc},
+	}
+
 	r := RunnerOf(cmds, Config{
 		Args: []string{"./someapp", "foo"},
 	})
@@ -144,6 +150,11 @@ func TestRunnerMustSortCommands(t *testing.T) {
 
 	sort.SliceIsSorted(r.cmds, func(i, j int) bool {
 		return r.cmds[i].Name < r.cmds[j].Name
+	})
+
+	subc := r.cmds[len(r.cmds)-1].Subcommands
+	sort.SliceIsSorted(subc, func(i, j int) bool {
+		return subc[i].Name < subc[j].Name
 	})
 }
 
