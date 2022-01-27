@@ -61,7 +61,7 @@ type Config struct {
 	Version string
 
 	// Output is a destionation where result will be printed.
-	// Exported for testing purpose only, if nil os.Stderr is used.
+	// Exported for testing purpose only, if nil os.Stdout is used.
 	Output io.Writer
 
 	// Context for commands, if nil context based on os.Interrupt and syscall.SIGTERM will be used.
@@ -117,7 +117,7 @@ func (r *Runner) Exit(err error) {
 
 func (r *Runner) init() error {
 	if r.cfg.Output == nil {
-		r.cfg.Output = os.Stderr
+		r.cfg.Output = os.Stdout
 	}
 
 	if r.cfg.Usage == nil {
