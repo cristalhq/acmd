@@ -6,13 +6,13 @@ Example with command like that `./dummy server ./openapi.yml -port=8080` from [d
 func run() error {
 	cmds := []acmd.Command{
 		{
-			// Command
+			// Command "server"
 			Name:        "server",
 			Description: "run mock server",
 			Do: func(ctx context.Context, args []string) error {
 				cfg := config.NewConfig()
                 
-				// Argument ./openapi
+				// Argument ./openapi.yml
 				cfg.Server.Path = args[0]
                 
 				// Flags after argument
