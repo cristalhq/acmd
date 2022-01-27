@@ -95,7 +95,7 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 		t.Fatal("context must be set")
 	}
 	if r.cfg.Usage == nil {
-		t.Fatal("usage nust be set")
+		t.Fatal("usage must be set")
 	}
 
 	gotCmds := map[string]struct{}{}
