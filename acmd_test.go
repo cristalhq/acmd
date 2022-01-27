@@ -3,6 +3,7 @@ package acmd
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -154,6 +155,36 @@ func TestRunnerPanicWithoutCommands(t *testing.T) {
 		}
 	}()
 	RunnerOf(nil, Config{})
+}
+
+func TestRunnerJustExit(t *testing.T) {
+	var exitDone bool
+	doExitOld := func(_ int) {
+		exitDone = true
+	}
+	defer func() { doExit = doExitOld }()
+	doExitOld, doExit = doExit, doExitOld
+
+	buf := &bytes.Buffer{}
+	r := RunnerOf([]Command{{Name: "foo", Do: nopFunc}}, Config{
+		AppName: "exit-test",
+		Output:  buf,
+	})
+	r.Exit(nil)
+
+	if !exitDone {
+		t.Fatal("must be done")
+	}
+	exitDone = false
+
+	r.Exit(errors.New("oops"))
+	if !exitDone {
+		t.Fatal("must be done")
+	}
+	got := buf.String()
+	if !strings.Contains(got, "exit-test: oops") {
+		t.Fatal(got)
+	}
 }
 
 func TestRunnerInit(t *testing.T) {

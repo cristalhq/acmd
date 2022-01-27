@@ -105,7 +105,8 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 // Otherwise: os.Exit(1).
 func (r *Runner) Exit(err error) {
 	if err == nil {
-		os.Exit(0)
+		doExit(0)
+		return
 	}
 	errCode := ErrCode(1)
 	errors.As(err, &errCode)
@@ -115,6 +116,14 @@ func (r *Runner) Exit(err error) {
 }
 
 func (r *Runner) init() error {
+	if r.cfg.Output == nil {
+		r.cfg.Output = os.Stderr
+	}
+
+	if r.cfg.Usage == nil {
+		r.cfg.Usage = defaultUsage(r.cfg.Output)
+	}
+
 	r.args = r.cfg.Args
 	if r.args == nil {
 		r.args = os.Args
@@ -135,14 +144,6 @@ func (r *Runner) init() error {
 	if r.ctx == nil {
 		// ok to ignore cancel func because os.Interrupt and syscall.SIGTERM is already almost os.Exit
 		r.ctx, _ = signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	}
-
-	if r.cfg.Output == nil {
-		r.cfg.Output = os.Stderr
-	}
-
-	if r.cfg.Usage == nil {
-		r.cfg.Usage = defaultUsage(r.cfg.Output)
 	}
 
 	fakeRootCmd := Command{
