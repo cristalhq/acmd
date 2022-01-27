@@ -21,6 +21,8 @@ Popular CLI libraries (or better frameworks) have too large and unclear API, in 
 * Auto suggesting command.
 * Builtin `help` and `version` commands.
 
+See [GUIDE.md](https://github.com/cristalhq/acmd/blob/main/GUIDE.md) for more details
+
 ## Install
 
 Go version 1.17+
