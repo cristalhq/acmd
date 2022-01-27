@@ -1,7 +1,7 @@
 # acmd guides
 
 ## Flag
-Example with command like that `./dummy server ./openapi -port=8080` from [dummy](https://github.com/go-dummy/dummy/blob/main/cmd/dummy/main.go)
+Example with command like that `./dummy server ./openapi.yml -port=8080` from [dummy](https://github.com/go-dummy/dummy/blob/main/cmd/dummy/main.go)
 ```go
 func run() error {
 	cmds := []acmd.Command{
