@@ -231,16 +231,21 @@ func ParseOptions(refArgs *[]string, refCtx *context.Context, opts []Option, exc
 		found := false
 		for _, opt := range opts {
 			if args[i] == "--"+opt.Name || args[i] == "-"+opt.ShortName {
-				value := args[i+1]
+				// if option doesn't have a default value, it sets "true" by default
+				if opt.DefaultValue == nil {
+					ctx = context.WithValue(ctx, optionKey(opt.Name), "true")
 
-				if !exclude(value) && !strings.HasPrefix(value, "--") && !strings.HasPrefix(value, "-") {
+					found = true
+					break
+				}
+
+				if value := args[i+1]; !exclude(value) && !isOption(value) {
 					ctx = context.WithValue(ctx, optionKey(opt.Name), unwrap(value))
 
 					found = true
-					i++ // skip value
+					i++ // skip value in the external cycle
+					break
 				}
-
-				break
 			}
 		}
 
@@ -391,6 +396,10 @@ func suggestCommand(got string, cmds []Command) string {
 		}
 	}
 	return match
+}
+
+func isOption(name string) bool {
+	return !strings.HasPrefix(name, "--") && !strings.HasPrefix(name, "-")
 }
 
 func bakeExclude(cmds []Command) func(name string) bool {
