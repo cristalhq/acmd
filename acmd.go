@@ -217,7 +217,13 @@ func ParseOptions(refArgs *[]string, refCtx *context.Context, opts []Option, exc
 	args := *refArgs
 
 	for _, opt := range opts {
-		ctx = context.WithValue(ctx, optionKey(opt.Name), opt.DefaultValue())
+		value := "false"
+
+		if opt.DefaultValue != nil {
+			value = opt.DefaultValue()
+		}
+
+		ctx = context.WithValue(ctx, optionKey(opt.Name), value)
 	}
 
 	for i := 0; i < len(args); i++ {
@@ -239,7 +245,7 @@ func ParseOptions(refArgs *[]string, refCtx *context.Context, opts []Option, exc
 					break
 				}
 
-				if value := args[i+1]; !exclude(value) && !isOption(value) {
+				if value := args[i+1]; !(exclude(value) || isOption(value)) {
 					ctx = context.WithValue(ctx, optionKey(opt.Name), unwrap(value))
 
 					found = true
@@ -399,19 +405,13 @@ func suggestCommand(got string, cmds []Command) string {
 }
 
 func isOption(name string) bool {
-	return !strings.HasPrefix(name, "--") && !strings.HasPrefix(name, "-")
+	return strings.HasPrefix(name, "--") || strings.HasPrefix(name, "-")
 }
 
 func bakeExclude(cmds []Command) func(name string) bool {
-	names := make([]string, len(cmds))
-
-	for i, cmd := range cmds {
-		names[i] = cmd.Name
-	}
-
 	return func(name string) bool {
-		for _, v := range names {
-			if v == name {
+		for _, cmd := range cmds {
+			if name == cmd.Name {
 				return true
 			}
 		}
@@ -430,8 +430,13 @@ func defaultUsage(w io.Writer) func(cfg Config, cmds []Command, opts []Option) {
 			fmt.Fprintf(w, "%s\n\n", cfg.AppDescription)
 		}
 
-		fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments...]\n\nThe commands are:\n\n", cfg.AppName)
-		printCommands(w, cmds)
+		if opts != nil {
+			fmt.Fprintf(w, "Usage:\n\n    %s [options] <command> [arguments...]\n\n", cfg.AppName)
+		} else {
+			fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments...]\n\n", cfg.AppName)
+		}
+
+		printInterface(w, cmds, opts)
 
 		if cfg.PostDescription != "" {
 			fmt.Fprintf(w, "%s\n\n", cfg.PostDescription)
@@ -442,10 +447,24 @@ func defaultUsage(w io.Writer) func(cfg Config, cmds []Command, opts []Option) {
 	}
 }
 
-// printCommands in a table form (Name and Description)
-func printCommands(w io.Writer, cmds []Command) {
+// printInterface in a table form (Name and Description)
+func printInterface(w io.Writer, cmds []Command, opts []Option) {
 	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
 	tw := tabwriter.NewWriter(w, minwidth, tabwidth, padding, padchar, flags)
+
+	if opts != nil {
+		fmt.Fprint(tw, "The options are:\n\n")
+		for _, opt := range opts {
+			desc := opt.Description
+			if desc == "" {
+				desc = "<no description>"
+			}
+			fmt.Fprintf(tw, "    %s\t%s\n", opt.Name, desc)
+		}
+		fmt.Fprintf(tw, "\n\n")
+	}
+
+	fmt.Fprint(tw, "The commands are:\n\n")
 	for _, cmd := range cmds {
 		if cmd.IsHidden {
 			continue
