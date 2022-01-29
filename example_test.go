@@ -13,7 +13,7 @@ import (
 
 var (
 	nopFunc  = func(context.Context, []string) error { return nil }
-	nopUsage = func(cfg acmd.Config, cmds []acmd.Command) {}
+	nopUsage = func(cfg acmd.Config, cmds []acmd.Command, opts []acmd.Option) {}
 )
 
 func ExampleRunner() {
@@ -56,7 +56,7 @@ func ExampleRunner() {
 		},
 	}
 
-	r := acmd.RunnerOf(cmds, acmd.Config{
+	r := acmd.RunnerOf(cmds, nil, acmd.Config{
 		AppName:         "acmd-example",
 		AppDescription:  "Example of acmd package",
 		PostDescription: "Best place to add examples",
@@ -97,7 +97,7 @@ func ExampleHelp() {
 		},
 	}
 
-	r := acmd.RunnerOf(cmds, acmd.Config{
+	r := acmd.RunnerOf(cmds, nil, acmd.Config{
 		AppName:         "acmd-example",
 		AppDescription:  "Example of acmd package",
 		PostDescription: "Best place to add examples.",
@@ -138,7 +138,7 @@ func ExampleVersion() {
 		{Name: "bar", Do: nopFunc},
 	}
 
-	r := acmd.RunnerOf(cmds, acmd.Config{
+	r := acmd.RunnerOf(cmds, nil, acmd.Config{
 		AppName:        "acmd-example",
 		AppDescription: "Example of acmd package",
 		Version:        "the best v0.x.y",
@@ -177,7 +177,7 @@ func ExampleAlias() {
 		},
 	}
 
-	r := acmd.RunnerOf(cmds, acmd.Config{
+	r := acmd.RunnerOf(cmds, nil, acmd.Config{
 		AppName:        "acmd-example",
 		AppDescription: "Example of acmd package",
 		Version:        "the best v0.x.y",
@@ -202,7 +202,7 @@ func ExampleAutosuggestion() {
 		{Name: "bar", Do: nopFunc},
 	}
 
-	r := acmd.RunnerOf(cmds, acmd.Config{
+	r := acmd.RunnerOf(cmds, nil, acmd.Config{
 		AppName:        "acmd-example",
 		AppDescription: "Example of acmd package",
 		Version:        "the best v0.x.y",
@@ -242,7 +242,7 @@ func ExampleNestedCommands() {
 		{Name: "boom", Do: nopFunc},
 	}
 
-	r := acmd.RunnerOf(cmds, acmd.Config{
+	r := acmd.RunnerOf(cmds, nil, acmd.Config{
 		AppName:        "acmd-example",
 		AppDescription: "Example of acmd package",
 		Version:        "the best v0.x.y",
