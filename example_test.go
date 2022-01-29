@@ -1,6 +1,7 @@
 package acmd_test
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -255,4 +256,68 @@ func ExampleNestedCommands() {
 	}
 
 	// Output: qux
+}
+
+func ExamplePropagateFlags() {
+	testOut := os.Stdout
+	testArgs := []string{"someapp", "foo", "-dir=test-dir", "--verbose"}
+	buf := &bytes.Buffer{}
+
+	cmds := []acmd.Command{
+		{
+			Name: "foo", Do: func(ctx context.Context, args []string) error {
+				fs := flag.NewFlagSet("foo", flag.ContinueOnError)
+				isRecursive := fs.Bool("r", false, "should file list be recursive")
+				common := withCommonFlags(fs)
+				if err := fs.Parse(args); err != nil {
+					return err
+				}
+				if common.IsVerbose {
+					fmt.Fprintf(buf, "TODO: dir %q, is recursive = %v\n", common.Dir, *isRecursive)
+				}
+				return nil
+			},
+		},
+		{
+			Name: "bar", Do: func(ctx context.Context, args []string) error {
+				fs := flag.NewFlagSet("bar", flag.ContinueOnError)
+				common := withCommonFlags(fs)
+				if err := fs.Parse(args); err != nil {
+					return err
+				}
+				if common.IsVerbose {
+					fmt.Fprintf(buf, "TODO: dir %q\n", common.Dir)
+				}
+				return nil
+			},
+		},
+	}
+
+	r := acmd.RunnerOf(cmds, acmd.Config{
+		AppName:        "acmd-example",
+		AppDescription: "Example of acmd package",
+		Version:        "the best v0.x.y",
+		Output:         testOut,
+		Args:           testArgs,
+	})
+
+	if err := r.Run(); err != nil {
+		panic(err)
+	}
+	fmt.Println(buf.String())
+
+	// Output: TODO: dir "test-dir", is recursive = false
+}
+
+type commonFlags struct {
+	IsVerbose bool
+	Dir       string
+}
+
+// NOTE: should be added before flag.FlagSet method Parse().
+func withCommonFlags(fs *flag.FlagSet) *commonFlags {
+	c := &commonFlags{}
+	fs.BoolVar(&c.IsVerbose, "verbose", false, "should app be verbose")
+	fs.StringVar(&c.Dir, "dir", ".", "directory to process")
+	return c
 }
