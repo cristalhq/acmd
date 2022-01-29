@@ -70,6 +70,48 @@ func TestRunner(t *testing.T) {
 	}
 }
 
+func TestRunnerParsingOptions(t *testing.T) {
+	buf := &bytes.Buffer{}
+
+	cmds := []Command{
+		{
+			Name:        "foo",
+			Description: "some description",
+			Do: func(ctx context.Context, args []string) error {
+				val := AccessContext(ctx, "option")
+
+				fmt.Fprint(buf, val)
+
+				return nil
+			},
+		},
+	}
+
+	opts := []Option{
+		{
+			Name:         "option",
+			ShortName:    "opt",
+			Description:  "something",
+			DefaultValue: func() string { return "hello" },
+		},
+	}
+
+	r := RunnerOf(cmds, opts, Config{
+		Args:           []string{"./someapp", "--option", "somevalue", "foo"},
+		AppName:        "myapp",
+		AppDescription: "myapp is a test application.",
+		Version:        time.Now().String(),
+		Output:         buf,
+	})
+
+	if err := r.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if got := buf.String(); got != "somevalue" {
+		t.Fatalf("want %q got %q", "somevalue", got)
+	}
+}
+
 func TestRunnerMustSetDefaults(t *testing.T) {
 	app := "./someapp"
 	args := append([]string{app, "runner"}, os.Args[1:]...)
