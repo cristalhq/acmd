@@ -15,7 +15,7 @@ import (
 
 var (
 	nopFunc  = func(context.Context, []string) error { return nil }
-	nopUsage = func(cfg Config, cmds []Command) {}
+	nopUsage = func(cfg Config, cmds []Command, opts []Option) {}
 )
 
 func TestRunner(t *testing.T) {
@@ -74,7 +74,7 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 	app := "./someapp"
 	args := append([]string{app, "runner"}, os.Args[1:]...)
 	cmds := []Command{{Name: "foo", Do: nopFunc}}
-	r := RunnerOf(cmds, Config{
+	r := RunnerOf(cmds, nil, Config{
 		Args:   args,
 		Output: io.Discard,
 		Usage:  nopUsage,
@@ -112,7 +112,7 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 
 func TestRunnerWithoutArgs(t *testing.T) {
 	cmds := []Command{{Name: "foo", Do: nopFunc}}
-	r := RunnerOf(cmds, Config{
+	r := RunnerOf(cmds, nil, Config{
 		Args:   []string{"./app"},
 		Output: io.Discard,
 		Usage:  nopUsage,
@@ -141,7 +141,7 @@ func TestRunnerMustSortCommands(t *testing.T) {
 		{Name: "b", Do: nopFunc},
 	}
 
-	r := RunnerOf(cmds, Config{
+	r := RunnerOf(cmds, nil, Config{
 		Args: []string{"./someapp", "foo"},
 	})
 
@@ -165,7 +165,7 @@ func TestRunnerPanicWithoutCommands(t *testing.T) {
 			t.Fatal("must be panic")
 		}
 	}()
-	RunnerOf(nil, Config{})
+	RunnerOf(nil, nil, Config{})
 }
 
 func TestRunnerJustExit(t *testing.T) {
@@ -177,7 +177,7 @@ func TestRunnerJustExit(t *testing.T) {
 	doExitOld, doExit = doExit, doExitOld
 
 	buf := &bytes.Buffer{}
-	r := RunnerOf([]Command{{Name: "foo", Do: nopFunc}}, Config{
+	r := RunnerOf([]Command{{Name: "foo", Do: nopFunc}}, nil, Config{
 		AppName: "exit-test",
 		Output:  buf,
 	})
@@ -274,7 +274,7 @@ func TestRunnerInit(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		err := RunnerOf(tc.cmds, tc.cfg).Run()
+		err := RunnerOf(tc.cmds, nil, tc.cfg).Run()
 
 		if got := err.Error(); !strings.Contains(got, tc.wantErrStr) {
 			t.Fatalf("want %q got %q", tc.wantErrStr, got)
@@ -316,7 +316,7 @@ func TestRunner_suggestCommand(t *testing.T) {
 
 	for _, tc := range testCases {
 		buf := &bytes.Buffer{}
-		r := RunnerOf(tc.cmds, Config{
+		r := RunnerOf(tc.cmds, nil, Config{
 			Args:    tc.args,
 			AppName: "myapp",
 			Output:  buf,
@@ -356,7 +356,7 @@ func TestCommand_IsHidden(t *testing.T) {
 		{Name: "foo", Do: nopFunc, IsHidden: true},
 		{Name: "bar", Do: nopFunc},
 	}
-	r := RunnerOf(cmds, Config{
+	r := RunnerOf(cmds, nil, Config{
 		Args:    []string{"./someapp", "help"},
 		AppName: "myapp",
 		Output:  buf,
@@ -384,7 +384,7 @@ func TestExit(t *testing.T) {
 	}
 
 	buf := &bytes.Buffer{}
-	r := RunnerOf(cmds, Config{
+	r := RunnerOf(cmds, nil, Config{
 		AppName: "myapp",
 		Args:    []string{"./someapp", "for"},
 		Output:  buf,
