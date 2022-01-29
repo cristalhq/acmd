@@ -8,9 +8,12 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strings"
 	"syscall"
 	"text/tabwriter"
 )
+
+type optionKey string
 
 // changed only in tests.
 var doExit = os.Exit
@@ -19,6 +22,7 @@ var doExit = os.Exit
 type Runner struct {
 	cfg     Config
 	cmds    []Command
+	opts    []Option
 	errInit error
 
 	ctx  context.Context
@@ -46,6 +50,23 @@ type Command struct {
 	IsHidden bool
 }
 
+// Option is a parameter for a program's cli,
+// that can be omitted, example: `test -H ":9000" run`
+type Option struct {
+	// Name of the option, example: `--help`
+	// also it will be used as a key in the passed context
+	Name string
+
+	// Short name of the option, example: `-h`
+	ShortName string
+
+	// Description of the option
+	Description string
+
+	// Will return default value, in case if the option is not mentioned
+	DefaultValue func() string
+}
+
 // Config for the runner.
 type Config struct {
 	// AppName is an optional name for the app, if empty os.Args[0] will be used.
@@ -71,7 +92,7 @@ type Config struct {
 	Args []string
 
 	// Usage of the application, if nil default will be used.
-	Usage func(cfg Config, cmds []Command)
+	Usage func(cfg Config, cmds []Command, opts []Option)
 }
 
 // HasHelpFlag reports whether help flag is presented in args.
@@ -86,13 +107,14 @@ func HasHelpFlag(flags []string) bool {
 }
 
 // RunnerOf creates a Runner.
-func RunnerOf(cmds []Command, cfg Config) *Runner {
+func RunnerOf(cmds []Command, opts []Option, cfg Config) *Runner {
 	if len(cmds) == 0 {
 		panic("acmd: cannot run without commands")
 	}
 
 	r := &Runner{
 		cmds: cmds,
+		opts: opts,
 		cfg:  cfg,
 	}
 	r.errInit = r.init()
@@ -141,9 +163,16 @@ func (r *Runner) init() error {
 	}
 
 	r.ctx = r.cfg.Context
+
 	if r.ctx == nil {
 		// ok to ignore cancel func because os.Interrupt and syscall.SIGTERM is already almost os.Exit
 		r.ctx, _ = signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	}
+
+	if r.opts != nil {
+		if err := ParseOptions(&r.args, &r.ctx, r.opts, bakeExclude(r.cmds)); err != nil {
+			return err
+		}
 	}
 
 	fakeRootCmd := Command{
@@ -159,7 +188,7 @@ func (r *Runner) init() error {
 			Name:        "help",
 			Description: "shows help message",
 			Do: func(ctx context.Context, args []string) error {
-				r.cfg.Usage(r.cfg, r.cmds)
+				r.cfg.Usage(r.cfg, r.cmds, r.opts)
 				return nil
 			},
 		},
@@ -176,6 +205,52 @@ func (r *Runner) init() error {
 	sort.Slice(r.cmds, func(i, j int) bool {
 		return r.cmds[i].Name < r.cmds[j].Name
 	})
+	return nil
+}
+
+func AccessContext(ctx context.Context, keyword string) string {
+	return ctx.Value(optionKey(keyword)).(string)
+}
+
+func ParseOptions(refArgs *[]string, refCtx *context.Context, opts []Option, exclude func(string) bool) error {
+	ctx := *refCtx
+	args := *refArgs
+
+	for _, opt := range opts {
+		ctx = context.WithValue(ctx, optionKey(opt.Name), opt.DefaultValue())
+	}
+
+	for i := 0; i < len(args); i++ {
+		if exclude != nil {
+			if exclude(args[i]) {
+				args = args[i:]
+				break
+			}
+		}
+
+		found := false
+		for _, opt := range opts {
+			if args[i] == "--"+opt.Name || args[i] == "-"+opt.ShortName {
+				value := args[i+1]
+
+				if !exclude(value) && !strings.HasPrefix(value, "--") && !strings.HasPrefix(value, "-") {
+					ctx = context.WithValue(ctx, optionKey(opt.Name), unwrap(value))
+
+					found = true
+					i++ // skip value
+				}
+
+				break
+			}
+		}
+
+		if !found {
+			return errors.New("option is not found: wrong option")
+		}
+	}
+
+	*refArgs = args
+	*refCtx = ctx
 	return nil
 }
 
@@ -318,8 +393,30 @@ func suggestCommand(got string, cmds []Command) string {
 	return match
 }
 
-func defaultUsage(w io.Writer) func(cfg Config, cmds []Command) {
-	return func(cfg Config, cmds []Command) {
+func bakeExclude(cmds []Command) func(name string) bool {
+	names := make([]string, len(cmds))
+
+	for i, cmd := range cmds {
+		names[i] = cmd.Name
+	}
+
+	return func(name string) bool {
+		for _, v := range names {
+			if v == name {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+func unwrap(value string) string {
+	return strings.TrimPrefix(strings.TrimSuffix(value, `"`), `"`)
+}
+
+func defaultUsage(w io.Writer) func(cfg Config, cmds []Command, opts []Option) {
+	return func(cfg Config, cmds []Command, opts []Option) {
 		if cfg.AppDescription != "" {
 			fmt.Fprintf(w, "%s\n\n", cfg.AppDescription)
 		}

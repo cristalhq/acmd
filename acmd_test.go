@@ -54,7 +54,7 @@ func TestRunner(t *testing.T) {
 			},
 		},
 	}
-	r := RunnerOf(cmds, Config{
+	r := RunnerOf(cmds, nil, Config{
 		Args:           []string{"./someapp", "test", "foo", "for"},
 		AppName:        "myapp",
 		AppDescription: "myapp is a test application.",
