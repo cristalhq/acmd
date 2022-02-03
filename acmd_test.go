@@ -372,7 +372,7 @@ func TestCommand_IsHidden(t *testing.T) {
 
 func TestExit(t *testing.T) {
 	wantStatus := 42
-	wantOutput := "myapp: got error: code 42\n"
+	wantOutput := "myapp: code 42\n"
 
 	cmds := []Command{
 		{
