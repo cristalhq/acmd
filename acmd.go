@@ -257,8 +257,8 @@ func (r *Runner) Run() error {
 	if err != nil {
 		return err
 	}
-	if err := cmd(r.ctx, params); err != nil {
-		return fmt.Errorf("got error: %w", err)
+	if err = cmd(r.ctx, params); err != nil {
+		return err
 	}
 	return nil
 }
