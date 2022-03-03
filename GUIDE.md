@@ -1,5 +1,25 @@
 # Guide for acmd
 
+## Default command
+
+Sometimes the app should work without any commands (ex `./app`), `acmd` doesn't have a feature for that, if command is not passed `help` will be used.
+
+But if you really want to have default command for the app you can do:
+
+```go
+func main() {
+	cmds := []acmd.Command{...}
+
+	if len(os.Args) <= 1 { // no command is passed?
+	    os.Args = []string{"", cmds[0].Name} // change the app args
+	}
+
+	// just create acmd.Runner as usual
+}
+```
+
+Note: this solution doesn't work with flags, consider to create a command even if you have just 1.
+
 ## Flag
 
 Example with command like that `./dummy server ./openapi.yml -port=8080` from [dummy](https://github.com/neotoolkit/dummy/blob/main/cmd/dummy/main.go)
