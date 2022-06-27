@@ -39,7 +39,7 @@ type Command struct {
 	// Do will be invoked.
 	Do func(ctx context.Context, args []string) error
 
-	// subcommands of the command.
+	// Subcommands of the command.
 	Subcommands []Command
 
 	// IsHidden reports whether command should not be show in help. Default false.
