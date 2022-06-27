@@ -205,6 +205,10 @@ func TestRunnerInit(t *testing.T) {
 		wantErrStr string
 	}{
 		{
+			cmds:       []Command{{Name: "app:create", Do: nopFunc}},
+			wantErrStr: ``,
+		},
+		{
 			cmds:       []Command{{Name: "", Do: nopFunc}},
 			wantErrStr: `command "" must contains only letters, digits, - and _`,
 		},
@@ -276,7 +280,7 @@ func TestRunnerInit(t *testing.T) {
 	for _, tc := range testCases {
 		err := RunnerOf(tc.cmds, tc.cfg).Run()
 
-		if got := err.Error(); !strings.Contains(got, tc.wantErrStr) {
+		if got := err.Error(); tc.wantErrStr != "" && !strings.Contains(got, tc.wantErrStr) {
 			t.Fatalf("want %q got %q", tc.wantErrStr, got)
 		}
 	}
