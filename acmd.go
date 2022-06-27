@@ -39,7 +39,7 @@ type Command struct {
 	// Do will be invoked.
 	Do func(ctx context.Context, args []string) error
 
-	// subcommands of the command.
+	// Subcommands of the command.
 	Subcommands []Command
 
 	// IsHidden reports whether command should not be show in help. Default false.
@@ -241,7 +241,7 @@ func isStringValid(s string) bool {
 	}
 	for _, c := range s {
 		if !(('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') ||
-			('0' <= c && c <= '9') || c == '-' || c == '_') {
+			('0' <= c && c <= '9') || c == '-' || c == '_' || c == ':') {
 			return false
 		}
 	}
