@@ -241,7 +241,7 @@ func isStringValid(s string) bool {
 	}
 	for _, c := range s {
 		if !(('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') ||
-			('0' <= c && c <= '9') || c == '-' || c == '_' || c == ':') {
+			('0' <= c && c <= '9') || c == '-' || c == '_' || c == ':' || c == '.') {
 			return false
 		}
 	}
