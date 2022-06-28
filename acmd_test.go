@@ -205,7 +205,7 @@ func TestRunnerInit(t *testing.T) {
 		wantErrStr string
 	}{
 		{
-			cmds:       []Command{{Name: "app:create", Do: nopFunc}},
+			cmds:       []Command{{Name: "app:cre.ate", Do: nopFunc}},
 			wantErrStr: ``,
 		},
 		{
