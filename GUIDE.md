@@ -103,3 +103,16 @@ func cmdBar(ctx context.Context, args []string) error {
 ```
 
 Also see `ExamplePropagateFlags` test.
+
+## Build version
+
+Let's assume you have `var Version string` in `main` package. To populate `acmd.Config.Version` field you can do:
+
+```sh
+$ go build -ldflags="-X 'main.Version=(local)'" -o my_binary .
+
+$ ./my_binary version
+./my_binary version: (local)
+```
+
+Starting from Go 1.18 this information is avaliable in `runtime/debug.BuildInfo`, see: https://github.com/golang/go/issues/37475
