@@ -251,16 +251,13 @@ func isStringValid(s string) bool {
 // Run commands.
 func (r *Runner) Run() error {
 	if r.errInit != nil {
-		return fmt.Errorf("init error: %w", r.errInit)
+		return r.errInit
 	}
 	cmd, params, err := findCmd(r.cfg, r.cmds, r.args)
 	if err != nil {
 		return err
 	}
-	if err = cmd(r.ctx, params); err != nil {
-		return err
-	}
-	return nil
+	return cmd(r.ctx, params)
 }
 
 func findCmd(cfg Config, cmds []Command, args []string) (func(ctx context.Context, args []string) error, []string, error) {

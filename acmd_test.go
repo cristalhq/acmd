@@ -122,7 +122,7 @@ func TestRunnerWithoutArgs(t *testing.T) {
 	if err == nil {
 		t.Fatal("must be error")
 	}
-	want := "init error: no args provided"
+	want := "no args provided"
 	if got := err.Error(); got != want {
 		t.Fatalf("got %q want %q", got, want)
 	}
@@ -278,6 +278,7 @@ func TestRunnerInit(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		tc.cfg.Output = io.Discard
 		err := RunnerOf(tc.cmds, tc.cfg).Run()
 
 		if got := err.Error(); tc.wantErrStr != "" && !strings.Contains(got, tc.wantErrStr) {

@@ -9,7 +9,7 @@ var (
 	ErrNoArgs = errors.New("no args provided")
 )
 
-// ErrCode contains an int to be returned as an exit code.
+// ErrCode is a number to be returned as an exit code.
 type ErrCode int
 
 func (e ErrCode) Error() string {
