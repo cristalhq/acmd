@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -62,12 +63,8 @@ func TestRunner(t *testing.T) {
 		Output:         buf,
 	})
 
-	if err := r.Run(); err != nil {
-		t.Fatal(err)
-	}
-	if got := buf.String(); got != "for" {
-		t.Fatalf("want %q got %q", "for", got)
-	}
+	failIfErr(t, r.Run())
+	mustEqual(t, buf.String(), "for")
 }
 
 func TestRunnerMustSetDefaults(t *testing.T) {
@@ -81,16 +78,13 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 	})
 
 	err := r.Run()
-	if err == nil {
-		t.Fatal()
-	}
+	failIfOk(t, err)
+
 	if errStr := err.Error(); !strings.Contains(errStr, `no such command "runner"`) {
 		t.Fatal(err)
 	}
 
-	if r.cfg.AppName != app {
-		t.Fatalf("want %q got %q", app, r.cfg.AppName)
-	}
+	mustEqual(t, r.cfg.AppName, app)
 	if r.ctx == nil {
 		t.Fatal("context must be set")
 	}
@@ -119,13 +113,8 @@ func TestRunnerWithoutArgs(t *testing.T) {
 	})
 
 	err := r.Run()
-	if err == nil {
-		t.Fatal("must be error")
-	}
-	want := "no args provided"
-	if got := err.Error(); got != want {
-		t.Fatalf("got %q want %q", got, want)
-	}
+	failIfOk(t, err)
+	mustEqual(t, err.Error(), "no args provided")
 }
 
 func TestRunnerMustSortCommands(t *testing.T) {
@@ -145,9 +134,7 @@ func TestRunnerMustSortCommands(t *testing.T) {
 		Args: []string{"./someapp", "foo"},
 	})
 
-	if err := r.Run(); err != nil {
-		t.Fatal(err)
-	}
+	failIfErr(t, r.Run())
 
 	sort.SliceIsSorted(r.cmds, func(i, j int) bool {
 		return r.cmds[i].Name < r.cmds[j].Name
@@ -183,15 +170,12 @@ func TestRunnerJustExit(t *testing.T) {
 	})
 	r.Exit(nil)
 
-	if !exitDone {
-		t.Fatal("must be done")
-	}
+	mustEqual(t, exitDone, true)
 	exitDone = false
 
 	r.Exit(errors.New("oops"))
-	if !exitDone {
-		t.Fatal("must be done")
-	}
+	mustEqual(t, exitDone, true)
+
 	got := buf.String()
 	if !strings.Contains(got, "exit-test: oops") {
 		t.Fatal(got)
@@ -331,9 +315,7 @@ func TestRunner_suggestCommand(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if got := buf.String(); got != tc.want {
-			t.Fatalf("want %q got %q", tc.want, got)
-		}
+		mustEqual(t, buf.String(), tc.want)
 	}
 }
 
@@ -348,9 +330,7 @@ func TestHasHelpFlag(t *testing.T) {
 		{[]string{"--help", "-h", "baz"}, true},
 	}
 	for _, tc := range testCases {
-		if got := HasHelpFlag(tc.args); got != tc.hasHelp {
-			t.Fatalf("got %v, want %v", got, tc.hasHelp)
-		}
+		mustEqual(t, HasHelpFlag(tc.args), tc.hasHelp)
 	}
 }
 
@@ -366,9 +346,7 @@ func TestCommand_IsHidden(t *testing.T) {
 		AppName: "myapp",
 		Output:  buf,
 	})
-	if err := r.Run(); err != nil {
-		t.Fatal(err)
-	}
+	failIfErr(t, r.Run())
 
 	if strings.Contains(buf.String(), "foo") {
 		t.Fatal("should not show foo")
@@ -396,9 +374,7 @@ func TestExit(t *testing.T) {
 	})
 
 	err := r.Run()
-	if err == nil {
-		t.Fatal("must not be nil")
-	}
+	failIfOk(t, err)
 
 	var gotStatus int
 	doExitOld := func(code int) {
@@ -410,10 +386,27 @@ func TestExit(t *testing.T) {
 
 	r.Exit(err)
 
-	if gotStatus != wantStatus {
-		t.Fatalf("got %d want %d", gotStatus, wantStatus)
+	mustEqual(t, gotStatus, wantStatus)
+	mustEqual(t, buf.String(), wantOutput)
+}
+
+func failIfOk(t testing.TB, err error) {
+	t.Helper()
+	if err == nil {
+		t.Fail()
 	}
-	if got := buf.String(); got != wantOutput {
-		t.Fatalf("got %q want %q", got, wantOutput)
+}
+
+func failIfErr(t testing.TB, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func mustEqual(t testing.TB, got, want interface{}) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("\nhave %+v\nwant %+v", got, want)
 	}
 }
