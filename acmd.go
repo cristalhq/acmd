@@ -37,13 +37,39 @@ type Command struct {
 	Description string
 
 	// Do will be invoked.
+	// Deprecated: use ExecFunc or Exec.
 	Do func(ctx context.Context, args []string) error
+
+	// ExecFunc represents the command function.
+	// Use Exec if you have struct implementing this function.
+	ExecFunc func(ctx context.Context, args []string) error
+
+	// Exec represents the command function.
+	// Will be used only if ExecFunc is nil.
+	Exec Exec
 
 	// Subcommands of the command.
 	Subcommands []Command
 
 	// IsHidden reports whether command should not be show in help. Default false.
 	IsHidden bool
+}
+
+// simple way to get exec function
+func (cmd *Command) getExec() func(ctx context.Context, args []string) error {
+	switch {
+	case cmd.ExecFunc != nil:
+		return cmd.ExecFunc
+	case cmd.Exec != nil:
+		return cmd.Exec.ExecCommand
+	default:
+		return nil
+	}
+}
+
+// Exec represents a command to run.
+type Exec interface {
+	ExecCommand(ctx context.Context, args []string) error
 }
 
 // Config for the runner.
@@ -158,7 +184,7 @@ func (r *Runner) init() error {
 		Command{
 			Name:        "help",
 			Description: "shows help message",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				r.cfg.Usage(r.cfg, r.cmds)
 				return nil
 			},
@@ -166,7 +192,7 @@ func (r *Runner) init() error {
 		Command{
 			Name:        "version",
 			Description: "shows version of the application",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				fmt.Fprintf(r.cfg.Output, "%s version: %s\n\n", r.cfg.AppName, r.cfg.Version)
 				return nil
 			},
@@ -183,11 +209,11 @@ func validateCommand(cmd Command) error {
 	cmds := cmd.Subcommands
 
 	switch {
-	case cmd.Do == nil && len(cmds) == 0:
-		return fmt.Errorf("command %q function cannot be nil or must have subcommands", cmd.Name)
+	case cmd.getExec() == nil && len(cmds) == 0:
+		return fmt.Errorf("command %q exec function cannot be nil OR must have subcommands", cmd.Name)
 
-	case cmd.Do != nil && len(cmds) != 0:
-		return fmt.Errorf("command %q function cannot be set and have subcommands", cmd.Name)
+	case cmd.getExec() != nil && len(cmds) != 0:
+		return fmt.Errorf("command %q exec function cannot be set AND have subcommands", cmd.Name)
 
 	case cmd.Name == "help" || cmd.Name == "version":
 		return fmt.Errorf("command %q is reserved", cmd.Name)
@@ -271,7 +297,7 @@ func findCmd(cfg Config, cmds []Command, args []string) (func(ctx context.Contex
 			}
 
 			// go deeper into subcommands
-			if c.Do == nil {
+			if c.getExec() == nil {
 				if len(params) == 0 {
 					return nil, nil, errors.New("no args for command provided")
 				}
@@ -279,7 +305,7 @@ func findCmd(cfg Config, cmds []Command, args []string) (func(ctx context.Contex
 				found = true
 				break
 			}
-			return c.Do, params, nil
+			return c.getExec(), params, nil
 		}
 
 		if !found {

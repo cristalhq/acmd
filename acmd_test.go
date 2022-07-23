@@ -31,7 +31,7 @@ func TestRunner(t *testing.T) {
 					Name: "foo",
 					Subcommands: []Command{
 						{
-							Name: "for", Do: func(ctx context.Context, args []string) error {
+							Name: "for", ExecFunc: func(ctx context.Context, args []string) error {
 								fmt.Fprint(buf, "for")
 								return nil
 							},
@@ -40,7 +40,7 @@ func TestRunner(t *testing.T) {
 				},
 				{
 					Name: "bar",
-					Do: func(ctx context.Context, args []string) error {
+					ExecFunc: func(ctx context.Context, args []string) error {
 						fmt.Fprint(buf, "bar")
 						return nil
 					},
@@ -50,7 +50,7 @@ func TestRunner(t *testing.T) {
 		{
 			Name:        "status",
 			Description: "status command gives status of the state",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				return nil
 			},
 		},
@@ -70,7 +70,7 @@ func TestRunner(t *testing.T) {
 func TestRunnerMustSetDefaults(t *testing.T) {
 	app := "./someapp"
 	args := append([]string{app, "runner"}, os.Args[1:]...)
-	cmds := []Command{{Name: "foo", Do: nopFunc}}
+	cmds := []Command{{Name: "foo", ExecFunc: nopFunc}}
 	r := RunnerOf(cmds, Config{
 		Args:   args,
 		Output: io.Discard,
@@ -105,7 +105,7 @@ func TestRunnerMustSetDefaults(t *testing.T) {
 }
 
 func TestRunnerWithoutArgs(t *testing.T) {
-	cmds := []Command{{Name: "foo", Do: nopFunc}}
+	cmds := []Command{{Name: "foo", ExecFunc: nopFunc}}
 	r := RunnerOf(cmds, Config{
 		Args:   []string{"./app"},
 		Output: io.Discard,
@@ -119,15 +119,15 @@ func TestRunnerWithoutArgs(t *testing.T) {
 
 func TestRunnerMustSortCommands(t *testing.T) {
 	cmds := []Command{
-		{Name: "foo", Do: nopFunc},
+		{Name: "foo", ExecFunc: nopFunc},
 		{Name: "xyz"},
-		{Name: "cake", Do: nopFunc},
-		{Name: "foo2", Do: nopFunc},
+		{Name: "cake", ExecFunc: nopFunc},
+		{Name: "foo2", ExecFunc: nopFunc},
 	}
 	cmds[1].Subcommands = []Command{
-		{Name: "a", Do: nopFunc},
-		{Name: "c", Do: nopFunc},
-		{Name: "b", Do: nopFunc},
+		{Name: "a", ExecFunc: nopFunc},
+		{Name: "c", ExecFunc: nopFunc},
+		{Name: "b", ExecFunc: nopFunc},
 	}
 
 	r := RunnerOf(cmds, Config{
@@ -164,7 +164,7 @@ func TestRunnerJustExit(t *testing.T) {
 	doExitOld, doExit = doExit, doExitOld
 
 	buf := &bytes.Buffer{}
-	r := RunnerOf([]Command{{Name: "foo", Do: nopFunc}}, Config{
+	r := RunnerOf([]Command{{Name: "foo", ExecFunc: nopFunc}}, Config{
 		AppName: "exit-test",
 		Output:  buf,
 	})
@@ -189,74 +189,74 @@ func TestRunnerInit(t *testing.T) {
 		wantErrStr string
 	}{
 		{
-			cmds:       []Command{{Name: "app:cre.ate", Do: nopFunc}},
+			cmds:       []Command{{Name: "app:cre.ate", ExecFunc: nopFunc}},
 			wantErrStr: ``,
 		},
 		{
-			cmds:       []Command{{Name: "", Do: nopFunc}},
+			cmds:       []Command{{Name: "", ExecFunc: nopFunc}},
 			wantErrStr: `command "" must contains only letters, digits, - and _`,
 		},
 		{
-			cmds:       []Command{{Name: "foo%", Do: nopFunc}},
+			cmds:       []Command{{Name: "foo%", ExecFunc: nopFunc}},
 			wantErrStr: `command "foo%" must contains only letters, digits, - and _`,
 		},
 		{
-			cmds:       []Command{{Name: "foo", Alias: "%", Do: nopFunc}},
+			cmds:       []Command{{Name: "foo", Alias: "%", ExecFunc: nopFunc}},
 			wantErrStr: `command alias "%" must contains only letters, digits, - and _`,
 		},
 		{
-			cmds:       []Command{{Name: "foo%", Do: nil}},
-			wantErrStr: `command "foo%" function cannot be nil`,
+			cmds:       []Command{{Name: "foo%", ExecFunc: nil}},
+			wantErrStr: `command "foo%" exec function cannot be nil OR must have subcommands`,
 		},
 		{
-			cmds:       []Command{{Name: "foo", Do: nil}},
-			wantErrStr: `command "foo" function cannot be nil or must have subcommands`,
+			cmds:       []Command{{Name: "foo", ExecFunc: nil}},
+			wantErrStr: `command "foo" exec function cannot be nil OR must have subcommands`,
 		},
 		{
 			cmds: []Command{{
 				Name:        "foobar",
-				Do:          nopFunc,
+				ExecFunc:    nopFunc,
 				Subcommands: []Command{{Name: "nested"}},
 			}},
-			wantErrStr: `command "foobar" function cannot be set and have subcommands`,
+			wantErrStr: `command "foobar" exec function cannot be set AND have subcommands`,
 		},
 		{
-			cmds: []Command{{Name: "foo", Do: nopFunc}},
+			cmds: []Command{{Name: "foo", ExecFunc: nopFunc}},
 			cfg: Config{
 				Args: []string{},
 			},
 			wantErrStr: `no args provided`,
 		},
 		{
-			cmds:       []Command{{Name: "help", Do: nopFunc}},
+			cmds:       []Command{{Name: "help", ExecFunc: nopFunc}},
 			wantErrStr: `command "help" is reserved`,
 		},
 		{
-			cmds:       []Command{{Name: "version", Do: nopFunc}},
+			cmds:       []Command{{Name: "version", ExecFunc: nopFunc}},
 			wantErrStr: `command "version" is reserved`,
 		},
 		{
-			cmds:       []Command{{Name: "foo", Alias: "help", Do: nopFunc}},
+			cmds:       []Command{{Name: "foo", Alias: "help", ExecFunc: nopFunc}},
 			wantErrStr: `command alias "help" is reserved`,
 		},
 		{
-			cmds:       []Command{{Name: "foo", Alias: "version", Do: nopFunc}},
+			cmds:       []Command{{Name: "foo", Alias: "version", ExecFunc: nopFunc}},
 			wantErrStr: `command alias "version" is reserved`,
 		},
 		{
-			cmds:       []Command{{Name: "a", Do: nopFunc}, {Name: "a", Do: nopFunc}},
+			cmds:       []Command{{Name: "a", ExecFunc: nopFunc}, {Name: "a", ExecFunc: nopFunc}},
 			wantErrStr: `duplicate command "a"`,
 		},
 		{
-			cmds:       []Command{{Name: "aaa", Do: nopFunc}, {Name: "b", Alias: "aaa", Do: nopFunc}},
+			cmds:       []Command{{Name: "aaa", ExecFunc: nopFunc}, {Name: "b", Alias: "aaa", ExecFunc: nopFunc}},
 			wantErrStr: `duplicate command alias "aaa"`,
 		},
 		{
-			cmds:       []Command{{Name: "aaa", Alias: "a", Do: nopFunc}, {Name: "bbb", Alias: "a", Do: nopFunc}},
+			cmds:       []Command{{Name: "aaa", Alias: "a", ExecFunc: nopFunc}, {Name: "bbb", Alias: "a", ExecFunc: nopFunc}},
 			wantErrStr: `duplicate command alias "a"`,
 		},
 		{
-			cmds:       []Command{{Name: "a", Do: nopFunc}, {Name: "b", Alias: "a", Do: nopFunc}},
+			cmds:       []Command{{Name: "a", ExecFunc: nopFunc}, {Name: "b", Alias: "a", ExecFunc: nopFunc}},
 			wantErrStr: `duplicate command alias "a"`,
 		},
 	}
@@ -264,9 +264,10 @@ func TestRunnerInit(t *testing.T) {
 	for _, tc := range testCases {
 		tc.cfg.Output = io.Discard
 		err := RunnerOf(tc.cmds, tc.cfg).Run()
+		failIfOk(t, err)
 
 		if got := err.Error(); tc.wantErrStr != "" && !strings.Contains(got, tc.wantErrStr) {
-			t.Fatalf("want %q got %q", tc.wantErrStr, got)
+			t.Fatalf("\nhave: %+v\nwant: %+v\n", tc.wantErrStr, got)
 		}
 	}
 }
@@ -279,25 +280,25 @@ func TestRunner_suggestCommand(t *testing.T) {
 	}{
 		{
 			cmds: []Command{
-				{Name: "for", Do: nopFunc},
-				{Name: "foo", Do: nopFunc},
-				{Name: "bar", Do: nopFunc},
+				{Name: "for", ExecFunc: nopFunc},
+				{Name: "foo", ExecFunc: nopFunc},
+				{Name: "bar", ExecFunc: nopFunc},
 			},
 			args: []string{"./someapp", "fooo"},
 			want: `"fooo" unknown command, did you mean "foo"?` + "\n" + `Run "myapp help" for usage.` + "\n\n",
 		},
 		{
-			cmds: []Command{{Name: "for", Do: nopFunc}},
+			cmds: []Command{{Name: "for", ExecFunc: nopFunc}},
 			args: []string{"./someapp", "hell"},
 			want: `"hell" unknown command, did you mean "help"?` + "\n" + `Run "myapp help" for usage.` + "\n\n",
 		},
 		{
-			cmds: []Command{{Name: "for", Do: nopFunc}},
+			cmds: []Command{{Name: "for", ExecFunc: nopFunc}},
 			args: []string{"./someapp", "verZION"},
 			want: `"verZION" unknown command` + "\n" + `Run "myapp help" for usage.` + "\n\n",
 		},
 		{
-			cmds: []Command{{Name: "for", Do: nopFunc}},
+			cmds: []Command{{Name: "for", ExecFunc: nopFunc}},
 			args: []string{"./someapp", "verZion"},
 			want: `"verZion" unknown command, did you mean "version"?` + "\n" + `Run "myapp help" for usage.` + "\n\n",
 		},
@@ -337,9 +338,9 @@ func TestHasHelpFlag(t *testing.T) {
 func TestCommand_IsHidden(t *testing.T) {
 	buf := &bytes.Buffer{}
 	cmds := []Command{
-		{Name: "for", Do: nopFunc},
-		{Name: "foo", Do: nopFunc, IsHidden: true},
-		{Name: "bar", Do: nopFunc},
+		{Name: "for", ExecFunc: nopFunc},
+		{Name: "foo", ExecFunc: nopFunc, IsHidden: true},
+		{Name: "bar", ExecFunc: nopFunc},
 	}
 	r := RunnerOf(cmds, Config{
 		Args:    []string{"./someapp", "help"},
@@ -360,7 +361,7 @@ func TestExit(t *testing.T) {
 	cmds := []Command{
 		{
 			Name: "for",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				return ErrCode(wantStatus)
 			},
 		},
@@ -404,9 +405,9 @@ func failIfErr(t testing.TB, err error) {
 	}
 }
 
-func mustEqual(t testing.TB, got, want interface{}) {
+func mustEqual(t testing.TB, have, want interface{}) {
 	t.Helper()
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("\nhave %+v\nwant %+v", got, want)
+	if !reflect.DeepEqual(have, want) {
+		t.Fatalf("\nhave: %+v\nwant: %+v\n", have, want)
 	}
 }

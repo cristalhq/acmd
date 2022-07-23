@@ -3,8 +3,10 @@ package acmd_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -28,7 +30,7 @@ func ExampleRunner() {
 		{
 			Name:        "now",
 			Description: "prints current time",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				fs := flag.NewFlagSet("some name for help", flag.ContinueOnError)
 				times := fs.Int("times", 1, "how many times to print time")
 				if err := fs.Parse(args); err != nil {
@@ -44,7 +46,7 @@ func ExampleRunner() {
 		{
 			Name:        "status",
 			Description: "prints status of the system",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.githubstatus.com/", http.NoBody)
 				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
@@ -85,16 +87,16 @@ func ExampleHelp() {
 		{
 			Name:        "now",
 			Description: "prints current time",
-			Do:          nopFunc,
+			ExecFunc:    nopFunc,
 		},
 		{
 			Name:        "status",
 			Description: "prints status of the system",
-			Do:          nopFunc,
+			ExecFunc:    nopFunc,
 		},
 		{
-			Name: "boom",
-			Do:   nopFunc,
+			Name:     "boom",
+			ExecFunc: nopFunc,
 		},
 	}
 
@@ -135,8 +137,8 @@ func ExampleVersion() {
 	testArgs := []string{"someapp", "version"}
 
 	cmds := []acmd.Command{
-		{Name: "foo", Do: nopFunc},
-		{Name: "bar", Do: nopFunc},
+		{Name: "foo", ExecFunc: nopFunc},
+		{Name: "bar", ExecFunc: nopFunc},
 	}
 
 	r := acmd.RunnerOf(cmds, acmd.Config{
@@ -163,7 +165,7 @@ func ExampleAlias() {
 		{
 			Name:  "foo",
 			Alias: "f",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				fmt.Fprint(testOut, "foo")
 				return nil
 			},
@@ -171,7 +173,7 @@ func ExampleAlias() {
 		{
 			Name:  "bar",
 			Alias: "b",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				fmt.Fprint(testOut, "bar")
 				return nil
 			},
@@ -199,8 +201,8 @@ func ExampleAutosuggestion() {
 	testArgs := []string{"someapp", "baz"}
 
 	cmds := []acmd.Command{
-		{Name: "foo", Do: nopFunc},
-		{Name: "bar", Do: nopFunc},
+		{Name: "foo", ExecFunc: nopFunc},
+		{Name: "bar", ExecFunc: nopFunc},
 	}
 
 	r := acmd.RunnerOf(cmds, acmd.Config{
@@ -229,18 +231,18 @@ func ExampleNestedCommands() {
 		{
 			Name: "foo",
 			Subcommands: []acmd.Command{
-				{Name: "bar", Do: nopFunc},
-				{Name: "baz", Do: nopFunc},
+				{Name: "bar", ExecFunc: nopFunc},
+				{Name: "baz", ExecFunc: nopFunc},
 				{
 					Name: "qux",
-					Do: func(ctx context.Context, args []string) error {
+					ExecFunc: func(ctx context.Context, args []string) error {
 						fmt.Fprint(testOut, "qux")
 						return nil
 					},
 				},
 			},
 		},
-		{Name: "boom", Do: nopFunc},
+		{Name: "boom", ExecFunc: nopFunc},
 	}
 
 	r := acmd.RunnerOf(cmds, acmd.Config{
@@ -258,6 +260,46 @@ func ExampleNestedCommands() {
 	// Output: qux
 }
 
+type myCommand struct {
+	ErrToReturn error
+}
+
+func (mc *myCommand) ExecCommand(ctx context.Context, args []string) error {
+	return mc.ErrToReturn
+}
+
+func ExampleExecStruct() {
+	myErr := errors.New("everything is ok")
+	myCmd := &myCommand{ErrToReturn: myErr}
+
+	cmds := []acmd.Command{
+		{
+			Name:        "what",
+			Description: "does something",
+
+			// ExecFunc:    myCmd.ExecCommand,
+			// NOTE: line below is literally line above
+			Exec: myCmd,
+		},
+	}
+
+	r := acmd.RunnerOf(cmds, acmd.Config{
+		AppName:         "acmd-example",
+		AppDescription:  "Example of acmd package",
+		PostDescription: "Best place to add examples",
+		Output:          io.Discard,
+		Args:            []string{"someapp", "what"},
+		Usage:           nopUsage,
+	})
+
+	err := r.Run()
+	if !errors.Is(err, myErr) {
+		panic(fmt.Sprintf("\ngot : %+v\nwant: %+v\n", err, myErr))
+	}
+
+	// Output:
+}
+
 func ExamplePropagateFlags() {
 	testOut := os.Stdout
 	testArgs := []string{"someapp", "foo", "-dir=test-dir", "--verbose"}
@@ -265,7 +307,7 @@ func ExamplePropagateFlags() {
 
 	cmds := []acmd.Command{
 		{
-			Name: "foo", Do: func(ctx context.Context, args []string) error {
+			Name: "foo", ExecFunc: func(ctx context.Context, args []string) error {
 				fs := flag.NewFlagSet("foo", flag.ContinueOnError)
 				isRecursive := fs.Bool("r", false, "should file list be recursive")
 				common := withCommonFlags(fs)
@@ -279,7 +321,7 @@ func ExamplePropagateFlags() {
 			},
 		},
 		{
-			Name: "bar", Do: func(ctx context.Context, args []string) error {
+			Name: "bar", ExecFunc: func(ctx context.Context, args []string) error {
 				fs := flag.NewFlagSet("bar", flag.ContinueOnError)
 				common := withCommonFlags(fs)
 				if err := fs.Parse(args); err != nil {
