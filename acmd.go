@@ -36,10 +36,6 @@ type Command struct {
 	// Description of the command.
 	Description string
 
-	// Do will be invoked.
-	// Deprecated: use ExecFunc or Exec.
-	Do func(ctx context.Context, args []string) error
-
 	// ExecFunc represents the command function.
 	// Use Exec if you have struct implementing this function.
 	ExecFunc func(ctx context.Context, args []string) error
@@ -58,9 +54,6 @@ type Command struct {
 // simple way to get exec function
 func (cmd *Command) getExec() func(ctx context.Context, args []string) error {
 	switch {
-	case cmd.Do != nil:
-		cmd.ExecFunc = cmd.Do
-		fallthrough
 	case cmd.ExecFunc != nil:
 		return cmd.ExecFunc
 	case cmd.Exec != nil:
