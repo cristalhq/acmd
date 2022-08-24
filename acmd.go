@@ -133,6 +133,10 @@ func RunnerOf(cmds []Command, cfg Config) *Runner {
 // If err is of type ErrCode: code from the error is returned: os.Exit(code)
 // Otherwise: os.Exit(1).
 func (r *Runner) Exit(err error) {
+	// do good thing: sync output before exit
+	os.Stdout.Sync()
+	os.Stderr.Sync()
+
 	if err == nil {
 		doExit(0)
 		return
