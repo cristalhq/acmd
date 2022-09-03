@@ -31,7 +31,7 @@ func run() error {
 			// Command "server"
 			Name:        "server",
 			Description: "run mock server",
-			Do: func(ctx context.Context, args []string) error {
+			ExecFunc: func(ctx context.Context, args []string) error {
 				cfg := config.NewConfig()
                 
 				// Argument ./openapi.yml
