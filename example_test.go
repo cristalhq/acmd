@@ -311,27 +311,24 @@ func ExamplePropagateFlags() {
 	cmds := []acmd.Command{
 		{
 			Name: "foo", ExecFunc: func(ctx context.Context, args []string) error {
-				fs := flag.NewFlagSet("foo", flag.ContinueOnError)
-				isRecursive := fs.Bool("r", false, "should file list be recursive")
-				common := withCommonFlags(fs)
-				if err := fs.Parse(args); err != nil {
+				var cfg generalFlags
+				if err := cfg.Flags().Parse(args); err != nil {
 					return err
 				}
-				if common.IsVerbose {
-					fmt.Fprintf(buf, "TODO: dir %q, is recursive = %v\n", common.Dir, *isRecursive)
+				if cfg.IsVerbose {
+					fmt.Fprintf(buf, "TODO: dir %q, is verbose = %v\n", cfg.Dir, cfg.IsVerbose)
 				}
 				return nil
 			},
 		},
 		{
 			Name: "bar", ExecFunc: func(ctx context.Context, args []string) error {
-				fs := flag.NewFlagSet("bar", flag.ContinueOnError)
-				common := withCommonFlags(fs)
-				if err := fs.Parse(args); err != nil {
+				var cfg commandFlags
+				if err := cfg.Flags().Parse(args); err != nil {
 					return err
 				}
-				if common.IsVerbose {
-					fmt.Fprintf(buf, "TODO: dir %q\n", common.Dir)
+				if cfg.IsVerbose {
+					fmt.Fprintf(buf, "TODO: dir %q\n", cfg.Dir)
 				}
 				return nil
 			},
@@ -351,20 +348,7 @@ func ExamplePropagateFlags() {
 	}
 	fmt.Println(buf.String())
 
-	// Output: TODO: dir "test-dir", is recursive = false
-}
-
-type commonFlags struct {
-	IsVerbose bool
-	Dir       string
-}
-
-// NOTE: should be added before flag.FlagSet method Parse().
-func withCommonFlags(fs *flag.FlagSet) *commonFlags {
-	c := &commonFlags{}
-	fs.BoolVar(&c.IsVerbose, "verbose", false, "should app be verbose")
-	fs.StringVar(&c.Dir, "dir", ".", "directory to process")
-	return c
+	// Output: TODO: dir "test-dir", is verbose = true
 }
 
 type generalFlags struct {
