@@ -359,18 +359,19 @@ func suggestCommand(got string, cmds []Command) string {
 
 func defaultUsage(r *Runner) func(cfg Config, cmds []Command) {
 	return func(cfg Config, cmds []Command) {
+		w := r.cfg.Output
 		if cfg.AppDescription != "" {
-			fmt.Fprintf(r.cfg.Output, "%s\n\n", cfg.AppDescription)
+			fmt.Fprintf(w, "%s\n\n", cfg.AppDescription)
 		}
 
-		fmt.Fprintf(r.cfg.Output, "Usage:\n\n    %s <command> [arguments...]\n\nThe commands are:\n\n", cfg.AppName)
+		fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments...]\n\nThe commands are:\n\n", cfg.AppName)
 		printCommands(r.cfg, cmds)
 
 		if cfg.PostDescription != "" {
-			fmt.Fprintf(r.cfg.Output, "%s\n\n", cfg.PostDescription)
+			fmt.Fprintf(w, "%s\n\n", cfg.PostDescription)
 		}
 		if cfg.Version != "" {
-			fmt.Fprintf(r.cfg.Output, "Version: %s\n\n", cfg.Version)
+			fmt.Fprintf(w, "Version: %s\n\n", cfg.Version)
 		}
 	}
 }
