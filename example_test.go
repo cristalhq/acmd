@@ -42,6 +42,7 @@ func ExampleRunner() {
 				}
 				return nil
 			},
+			FlagSet: &commandFlags{},
 		},
 		{
 			Name:        "status",
@@ -97,6 +98,7 @@ func ExampleHelp() {
 		{
 			Name:     "boom",
 			ExecFunc: nopFunc,
+			FlagSet:  &generalFlags{},
 		},
 	}
 
@@ -113,7 +115,8 @@ func ExampleHelp() {
 		panic(err)
 	}
 
-	// Output: Example of acmd package
+	// Output:
+	// Example of acmd package
 	//
 	// Usage:
 	//
@@ -362,4 +365,27 @@ func withCommonFlags(fs *flag.FlagSet) *commonFlags {
 	fs.BoolVar(&c.IsVerbose, "verbose", false, "should app be verbose")
 	fs.StringVar(&c.Dir, "dir", ".", "directory to process")
 	return c
+}
+
+type generalFlags struct {
+	IsVerbose bool
+	Dir       string
+}
+
+func (c *generalFlags) Flags() *flag.FlagSet {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs.BoolVar(&c.IsVerbose, "verbose", false, "should app be verbose")
+	fs.StringVar(&c.Dir, "dir", ".", "directory to process")
+	return fs
+}
+
+type commandFlags struct {
+	generalFlags
+	File string
+}
+
+func (c *commandFlags) Flags() *flag.FlagSet {
+	fs := c.generalFlags.Flags()
+	fs.StringVar(&c.File, "file", "input.txt", "file to process")
+	return fs
 }
