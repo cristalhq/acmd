@@ -64,40 +64,49 @@ func run() error {
 There is no special methods, config fields to propagate flags to subcommands. However it's not hard to make this, because every command can access predefined flags, which are shared across handlers.
 
 ```go
-type commonFlags struct {
+// generalFlags can be used as flags for all command
+type generalFlags struct {
 	IsVerbose bool
+	Dir       string
 }
 
-// NOTE: should be added before flag.FlagSet method Parse().
-func withCommonFlags(fs *flag.FlagSet) *commonFlags {
-	c := &commonFlags{}
+func (c *generalFlags) Flags() *flag.FlagSet {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	fs.BoolVar(&c.IsVerbose, "verbose", false, "should app be verbose")
-	return c
+	fs.StringVar(&c.Dir, "dir", ".", "directory to process")
+	return fs
+}
+
+// commandFlags is a flags for a command
+// using struct embedding we can inherit other flags
+type commandFlags struct {
+	generalFlags
+	File string
+}
+
+func (c *commandFlags) Flags() *flag.FlagSet {
+	fs := c.generalFlags.Flags()
+	fs.StringVar(&c.File, "file", "input.txt", "file to process")
+	return fs
 }
 
 func cmdFoo(ctx context.Context, args []string) error {
-	fs := flag.NewFlagSet("foo", flag.ContinueOnError)
-	// NOTE: here add flags for cmdBar as always
-
-	// add common flags, make sure it's before Parse but after all defined flags
-	common := withCommonFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	var cfg generalFlags
+	if fs := cfg.Flags().Parse(args); err != nil{
 		return err
 	}
-	// use commonFlags fields or any other flags that you have defined
+
+	// use cfg fields or any other flags that you have defined
 	return nil
 }
 
 func cmdBar(ctx context.Context, args []string) error {
-	fs := flag.NewFlagSet("bar", flag.ContinueOnError)
-	// NOTE: here add flags for cmdFoo as always
-
-	// add common flags, make sure it's before Parse but after all defined flags
-	common := withCommonFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	var cfg commandFlags
+	if fs := cfg.Flags().Parse(args); err != nil{
 		return err
 	}
-	// use commonFlags fields or any other flags that you have defined
+	
+	// use cfg fields or any other flags that you have defined
 	return nil
 }
 ```

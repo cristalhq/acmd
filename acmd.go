@@ -3,6 +3,7 @@ package acmd
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -53,6 +54,15 @@ type Command struct {
 
 	// IsHidden reports whether command should not be show in help. Default false.
 	IsHidden bool
+
+	// FlagSet is an optional field where you can provide command's flags.
+	// Is used for autocomplete. Works best with https://github.com/cristalhq/flagx
+	FlagSet FlagSetter
+}
+
+// FlagSetter returns flags for the command. See examples.
+type FlagSetter interface {
+	Flags() *flag.FlagSet
 }
 
 // simple way to get exec function
@@ -101,6 +111,9 @@ type Config struct {
 
 	// Usage of the application, if nil default will be used.
 	Usage func(cfg Config, cmds []Command)
+
+	// VerboseHelp if "./app help -v" is passed, default is false.
+	VerboseHelp bool
 }
 
 // HasHelpFlag reports whether help flag is presented in args.
@@ -150,7 +163,7 @@ func (r *Runner) init() error {
 	}
 
 	if r.cfg.Usage == nil {
-		r.cfg.Usage = defaultUsage(r.cfg.Output)
+		r.cfg.Usage = defaultUsage(r)
 	}
 
 	r.args = r.cfg.Args
@@ -344,14 +357,15 @@ func suggestCommand(got string, cmds []Command) string {
 	return match
 }
 
-func defaultUsage(w io.Writer) func(cfg Config, cmds []Command) {
+func defaultUsage(r *Runner) func(cfg Config, cmds []Command) {
 	return func(cfg Config, cmds []Command) {
+		w := r.cfg.Output
 		if cfg.AppDescription != "" {
 			fmt.Fprintf(w, "%s\n\n", cfg.AppDescription)
 		}
 
 		fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments...]\n\nThe commands are:\n\n", cfg.AppName)
-		printCommands(w, cmds)
+		printCommands(r.cfg, cmds)
 
 		if cfg.PostDescription != "" {
 			fmt.Fprintf(w, "%s\n\n", cfg.PostDescription)
@@ -363,18 +377,28 @@ func defaultUsage(w io.Writer) func(cfg Config, cmds []Command) {
 }
 
 // printCommands in a table form (Name and Description)
-func printCommands(w io.Writer, cmds []Command) {
+func printCommands(cfg Config, cmds []Command) {
 	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
-	tw := tabwriter.NewWriter(w, minwidth, tabwidth, padding, padchar, flags)
+	tw := tabwriter.NewWriter(cfg.Output, minwidth, tabwidth, padding, padchar, flags)
 	for _, cmd := range cmds {
 		if cmd.IsHidden {
 			continue
 		}
+
 		desc := cmd.Description
 		if desc == "" {
 			desc = "<no description>"
 		}
 		fmt.Fprintf(tw, "    %s\t%s\n", cmd.Name, desc)
+
+		if cfg.VerboseHelp && cmd.FlagSet != nil {
+			fset := cmd.FlagSet.Flags()
+			old := fset.Output()
+			fmt.Fprintf(tw, "        ")
+			fset.SetOutput(tw)
+			fset.Usage()
+			fset.SetOutput(old)
+		}
 	}
 	fmt.Fprint(tw, "\n")
 	tw.Flush()

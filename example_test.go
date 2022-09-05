@@ -42,6 +42,7 @@ func ExampleRunner() {
 				}
 				return nil
 			},
+			FlagSet: &commandFlags{},
 		},
 		{
 			Name:        "status",
@@ -97,6 +98,7 @@ func ExampleHelp() {
 		{
 			Name:     "boom",
 			ExecFunc: nopFunc,
+			FlagSet:  &generalFlags{},
 		},
 	}
 
@@ -113,7 +115,8 @@ func ExampleHelp() {
 		panic(err)
 	}
 
-	// Output: Example of acmd package
+	// Output:
+	// Example of acmd package
 	//
 	// Usage:
 	//
@@ -308,27 +311,24 @@ func ExamplePropagateFlags() {
 	cmds := []acmd.Command{
 		{
 			Name: "foo", ExecFunc: func(ctx context.Context, args []string) error {
-				fs := flag.NewFlagSet("foo", flag.ContinueOnError)
-				isRecursive := fs.Bool("r", false, "should file list be recursive")
-				common := withCommonFlags(fs)
-				if err := fs.Parse(args); err != nil {
+				var cfg generalFlags
+				if err := cfg.Flags().Parse(args); err != nil {
 					return err
 				}
-				if common.IsVerbose {
-					fmt.Fprintf(buf, "TODO: dir %q, is recursive = %v\n", common.Dir, *isRecursive)
+				if cfg.IsVerbose {
+					fmt.Fprintf(buf, "TODO: dir %q, is verbose = %v\n", cfg.Dir, cfg.IsVerbose)
 				}
 				return nil
 			},
 		},
 		{
 			Name: "bar", ExecFunc: func(ctx context.Context, args []string) error {
-				fs := flag.NewFlagSet("bar", flag.ContinueOnError)
-				common := withCommonFlags(fs)
-				if err := fs.Parse(args); err != nil {
+				var cfg commandFlags
+				if err := cfg.Flags().Parse(args); err != nil {
 					return err
 				}
-				if common.IsVerbose {
-					fmt.Fprintf(buf, "TODO: dir %q\n", common.Dir)
+				if cfg.IsVerbose {
+					fmt.Fprintf(buf, "TODO: dir %q\n", cfg.Dir)
 				}
 				return nil
 			},
@@ -348,18 +348,28 @@ func ExamplePropagateFlags() {
 	}
 	fmt.Println(buf.String())
 
-	// Output: TODO: dir "test-dir", is recursive = false
+	// Output: TODO: dir "test-dir", is verbose = true
 }
 
-type commonFlags struct {
+type generalFlags struct {
 	IsVerbose bool
 	Dir       string
 }
 
-// NOTE: should be added before flag.FlagSet method Parse().
-func withCommonFlags(fs *flag.FlagSet) *commonFlags {
-	c := &commonFlags{}
+func (c *generalFlags) Flags() *flag.FlagSet {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	fs.BoolVar(&c.IsVerbose, "verbose", false, "should app be verbose")
 	fs.StringVar(&c.Dir, "dir", ".", "directory to process")
-	return c
+	return fs
+}
+
+type commandFlags struct {
+	generalFlags
+	File string
+}
+
+func (c *commandFlags) Flags() *flag.FlagSet {
+	fs := c.generalFlags.Flags()
+	fs.StringVar(&c.File, "file", "input.txt", "file to process")
+	return fs
 }
