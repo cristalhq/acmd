@@ -57,11 +57,11 @@ type Command struct {
 
 	// FlagSet is an optional field where you can provide command's flags.
 	// Is used for autocomplete. Works best with https://github.com/cristalhq/flagx
-	FlagSet FlagSetter
+	FlagSet FlagsGetter
 }
 
-// FlagSetter returns flags for the command. See examples.
-type FlagSetter interface {
+// FlagsGetter returns flags for the command. See examples.
+type FlagsGetter interface {
 	Flags() *flag.FlagSet
 }
 
