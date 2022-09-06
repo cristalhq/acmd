@@ -38,7 +38,7 @@ cmds := []acmd.Command{
 	{
 		Name:        "now",
 		Description: "prints current time",
-		Do: func(ctx context.Context, args []string) error {
+		ExecFunc: func(ctx context.Context, args []string) error {
 			fmt.Printf("now: %s\n", now.Format("15:04:05"))
 			return nil
 		},
@@ -46,7 +46,7 @@ cmds := []acmd.Command{
 	{
 		Name:        "status",
 		Description: "prints status of the system",
-		Do: func(ctx context.Context, args []string) error {
+		ExecFunc: func(ctx context.Context, args []string) error {
 			// do something with ctx :)
 			return nil
 		},

@@ -354,28 +354,6 @@ func TestCommand_IsHidden(t *testing.T) {
 	}
 }
 
-func TestDoShouldWork(t *testing.T) {
-	var ok bool
-
-	cmds := []Command{
-		{
-			Name: "foo",
-			Do: func(ctx context.Context, args []string) error {
-				ok = true
-				return nil
-			},
-		},
-	}
-
-	r := RunnerOf(cmds, Config{
-		Args:    []string{"./someapp", "foo"},
-		AppName: "myapp",
-	})
-
-	failIfErr(t, r.Run())
-	mustEqual(t, ok, true)
-}
-
 func TestExit(t *testing.T) {
 	wantStatus := 42
 	wantOutput := "myapp: code 42\n"
