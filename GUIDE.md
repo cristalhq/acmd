@@ -125,3 +125,32 @@ $ ./my_binary version
 ```
 
 Starting from Go 1.18 this information is avaliable in `runtime/debug.BuildInfo`, see: https://github.com/golang/go/issues/37475
+
+## Autocomplete
+
+Setting `Config.AutoComplete` to true will add a hidden `__complete` command to the `Runner`.
+To add completitions to the shell there are 2 options:
+
+To make it automatically just do:
+
+```bash
+$ myapp __complete install
+```
+
+To make it manually do:
+
+```bash
+# bash
+$ echo 'source <(myapp __complete script)' >> ~/.bash_profile
+
+# fish
+$ myapp __complete script | source
+
+# power:
+$ myapp __complete script | Out-String | Invoke-Expression
+
+# zsh:
+$ source <(myapp __complete script)
+```
+
+See `myapp __complete [install|script] -h` for flags to configure autocomplete.
