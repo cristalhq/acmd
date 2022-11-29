@@ -390,7 +390,6 @@ func printCommands(cfg Config, cmds []Command) {
 }
 
 func printCommand(cfg Config, tw *tabwriter.Writer, pre string, cmd Command) {
-
 	var name string = cmd.Name
 
 	if cmd.IsHidden {
