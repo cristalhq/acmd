@@ -391,7 +391,7 @@ func printCommands(cfg Config, cmds []Command) {
 
 func printCommand(cfg Config, tw *tabwriter.Writer, pre string, cmd Command) {
 
-	var name string
+	var name string = cmd.Name
 
 	if cmd.IsHidden {
 		return
@@ -403,8 +403,6 @@ func printCommand(cfg Config, tw *tabwriter.Writer, pre string, cmd Command) {
 
 	if pre != "" {
 		name = fmt.Sprintf("%s %s", pre, cmd.Name)
-	} else {
-		name = cmd.Name
 	}
 
 	fmt.Fprintf(tw, "    %s\t%s\n", name, desc)
