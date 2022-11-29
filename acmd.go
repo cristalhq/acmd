@@ -358,7 +358,7 @@ func defaultUsage(r *Runner) func(cfg Config, cmds []Command) {
 		}
 
 		fmt.Fprintf(w, "Usage:\n\n    %s <command> [arguments...]\n\nThe commands are:\n\n", cfg.AppName)
-		printCommands(r.cfg, cmds)
+		printCommands(&r.cfg, cmds)
 
 		if cfg.PostDescription != "" {
 			fmt.Fprintf(w, "%s\n\n", cfg.PostDescription)
@@ -370,38 +370,36 @@ func defaultUsage(r *Runner) func(cfg Config, cmds []Command) {
 }
 
 // printCommands in a table form (Name and Description)
-func printCommands(cfg Config, cmds []Command) {
+func printCommands(cfg *Config, cmds []Command) {
 	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
 	tw := tabwriter.NewWriter(cfg.Output, minwidth, tabwidth, padding, padchar, flags)
-	for _, cmd := range cmds {
 
+	for _, cmd := range cmds {
 		if len(cmd.Subcommands) == 0 {
 			printCommand(cfg, tw, "", cmd)
-			continue
 		}
 
 		for _, subcmd := range cmd.Subcommands {
 			printCommand(cfg, tw, cmd.Name, subcmd)
 		}
-
 	}
 	fmt.Fprint(tw, "\n")
 	tw.Flush()
 }
 
-func printCommand(cfg Config, tw *tabwriter.Writer, pre string, cmd Command) {
-	var name string = cmd.Name
-
+func printCommand(cfg *Config, tw *tabwriter.Writer, prefix string, cmd Command) {
 	if cmd.IsHidden {
 		return
 	}
+
+	name := cmd.Name
+	if prefix != "" {
+		name = fmt.Sprintf("%s %s", prefix, cmd.Name)
+	}
+
 	desc := cmd.Description
 	if desc == "" {
 		desc = "<no description>"
-	}
-
-	if pre != "" {
-		name = fmt.Sprintf("%s %s", pre, cmd.Name)
 	}
 
 	fmt.Fprintf(tw, "    %s\t%s\n", name, desc)
