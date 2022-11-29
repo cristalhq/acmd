@@ -374,25 +374,44 @@ func printCommands(cfg Config, cmds []Command) {
 	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
 	tw := tabwriter.NewWriter(cfg.Output, minwidth, tabwidth, padding, padchar, flags)
 	for _, cmd := range cmds {
-		if cmd.IsHidden {
+
+		if len(cmd.Subcommands) == 0 {
+			printCommand(cfg, tw, "", cmd)
 			continue
 		}
 
-		desc := cmd.Description
-		if desc == "" {
-			desc = "<no description>"
+		for _, subcmd := range cmd.Subcommands {
+			printCommand(cfg, tw, cmd.Name, subcmd)
 		}
-		fmt.Fprintf(tw, "    %s\t%s\n", cmd.Name, desc)
 
-		if cfg.VerboseHelp && cmd.FlagSet != nil {
-			fset := cmd.FlagSet.Flags()
-			old := fset.Output()
-			fmt.Fprintf(tw, "        ")
-			fset.SetOutput(tw)
-			fset.Usage()
-			fset.SetOutput(old)
-		}
 	}
 	fmt.Fprint(tw, "\n")
 	tw.Flush()
+}
+
+func printCommand(cfg Config, tw *tabwriter.Writer, pre string, cmd Command) {
+	var name string = cmd.Name
+
+	if cmd.IsHidden {
+		return
+	}
+	desc := cmd.Description
+	if desc == "" {
+		desc = "<no description>"
+	}
+
+	if pre != "" {
+		name = fmt.Sprintf("%s %s", pre, cmd.Name)
+	}
+
+	fmt.Fprintf(tw, "    %s\t%s\n", name, desc)
+
+	if cfg.VerboseHelp && cmd.FlagSet != nil {
+		fset := cmd.FlagSet.Flags()
+		old := fset.Output()
+		fmt.Fprintf(tw, "        ")
+		fset.SetOutput(tw)
+		fset.Usage()
+		fset.SetOutput(old)
+	}
 }
