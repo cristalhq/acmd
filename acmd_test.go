@@ -391,38 +391,6 @@ func TestExit(t *testing.T) {
 	mustEqual(t, buf.String(), wantOutput)
 }
 
-func TestCommand_Help_SubCommands(t *testing.T) {
-	buf := &bytes.Buffer{}
-	cmds := []Command{
-		{Name: "cmd", Subcommands: []Command{
-			{Name: "sub1", ExecFunc: nopFunc, Description: "show sub1"},
-			{Name: "sub2", ExecFunc: nopFunc, Description: "show sub2"},
-		}},
-	}
-	r := RunnerOf(cmds, Config{
-		Args:    []string{"./myapp", "help"},
-		AppName: "myapp",
-		Output:  buf,
-	})
-	failIfErr(t, r.Run())
-
-	if !strings.Contains(buf.String(), "cmd sub1") {
-		t.Fatal("should show subcommand help")
-	}
-
-	if !strings.Contains(buf.String(), "cmd sub2") {
-		t.Fatal("should show subcommand help")
-	}
-
-	if !strings.Contains(buf.String(), "show sub1") {
-		t.Fatal("should show subcommand help")
-	}
-
-	if !strings.Contains(buf.String(), "show sub2") {
-		t.Fatal("should show subcommand help")
-	}
-}
-
 func failIfOk(t testing.TB, err error) {
 	t.Helper()
 	if err == nil {

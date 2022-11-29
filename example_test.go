@@ -100,6 +100,12 @@ func ExampleHelp() {
 			ExecFunc: nopFunc,
 			FlagSet:  &generalFlags{},
 		},
+		{
+			Name: "time", Subcommands: []acmd.Command{
+				{Name: "next", ExecFunc: nopFunc, Description: "next time subcommand"},
+				{Name: "curr", ExecFunc: nopFunc, Description: "curr time subcommand"},
+			},
+		},
 	}
 
 	r := acmd.RunnerOf(cmds, acmd.Config{
@@ -124,11 +130,13 @@ func ExampleHelp() {
 	//
 	// The commands are:
 	//
-	//     boom              <no description>
-	//     help              shows help message
-	//     now               prints current time
-	//     status            prints status of the system
-	//     version           shows version of the application
+	//     boom                <no description>
+	//     help                shows help message
+	//     now                 prints current time
+	//     status              prints status of the system
+	//     time curr           curr time subcommand
+	//     time next           next time subcommand
+	//     version             shows version of the application
 	//
 	// Best place to add examples.
 	//
