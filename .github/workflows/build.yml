@@ -18,13 +18,13 @@ on:
 # See https://github.com/cristalhq/.github/.github/workflows
 jobs:
   build:
-    uses: cristalhq/.github/.github/workflows/build.yml@v0.2.1
+    uses: cristalhq/.github/.github/workflows/build.yml@more-strict-permissions
 
   vuln:
-    uses: cristalhq/.github/.github/workflows/vuln.yml@v0.2.1
+    uses: cristalhq/.github/.github/workflows/vuln.yml@more-strict-permissions
 
   release:
     if: github.event_name == 'workflow_dispatch'
-    uses: cristalhq/.github/.github/workflows/release.yml@v0.2.1
+    uses: cristalhq/.github/.github/workflows/release.yml@more-strict-permissions
     with:
       tag: ${{ github.event.input.tag }}
