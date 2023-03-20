@@ -17,7 +17,7 @@ on:
 # See https://github.com/cristalhq/.github/.github/workflows
 jobs:
   build:
-    uses: cristalhq/.github/.github/workflows/build.yml@more-strict-permissions
+    uses: cristalhq/.github/.github/workflows/build.yml@v0.4.0
 
   vuln:
-    uses: cristalhq/.github/.github/workflows/vuln.yml@more-strict-permissions
+    uses: cristalhq/.github/.github/workflows/vuln.yml@v0.4.0
