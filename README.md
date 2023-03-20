@@ -66,7 +66,7 @@ if err := r.Run(); err != nil {
 }
 ```
 
-See examples: [examples_test.go](example_test.go).
+See examples: [example_test.go](example_test.go).
 
 ## Documentation
 
