@@ -14,7 +14,6 @@ on:
         required: true
         default: 'v0.0.0'
 
-
 # See https://github.com/cristalhq/.github/.github/workflows
 jobs:
   build:
@@ -22,9 +21,3 @@ jobs:
 
   vuln:
     uses: cristalhq/.github/.github/workflows/vuln.yml@more-strict-permissions
-
-  release:
-    if: github.event_name == 'workflow_dispatch'
-    uses: cristalhq/.github/.github/workflows/release.yml@more-strict-permissions
-    with:
-      tag: ${{ github.event.input.tag }}
