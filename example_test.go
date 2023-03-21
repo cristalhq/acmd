@@ -80,7 +80,7 @@ func ExampleRunner() {
 	// now: 10:20:30
 }
 
-func ExampleHelp() {
+func Example_verboseHelp() {
 	testOut := os.Stdout
 	testArgs := []string{"someapp", "help"}
 
@@ -115,6 +115,7 @@ func ExampleHelp() {
 		Version:         "the best v0.x.y",
 		Output:          testOut,
 		Args:            testArgs,
+		VerboseHelp:     !true, // TODO(cristaloleg): fix this
 	})
 
 	if err := r.Run(); err != nil {
@@ -143,7 +144,7 @@ func ExampleHelp() {
 	// Version: the best v0.x.y
 }
 
-func ExampleVersion() {
+func Example_version() {
 	testOut := os.Stdout
 	testArgs := []string{"someapp", "version"}
 
@@ -168,7 +169,7 @@ func ExampleVersion() {
 	// Output: acmd-example version: the best v0.x.y
 }
 
-func ExampleAlias() {
+func Example_alias() {
 	testOut := os.Stdout
 	testArgs := []string{"someapp", "f"}
 
@@ -207,7 +208,7 @@ func ExampleAlias() {
 	// Output: foo
 }
 
-func ExampleAutosuggestion() {
+func Example_autosuggestion() {
 	testOut := os.Stdout
 	testArgs := []string{"someapp", "baz"}
 
@@ -234,7 +235,7 @@ func ExampleAutosuggestion() {
 	// Run "acmd-example help" for usage.
 }
 
-func ExampleNestedCommands() {
+func Example_nestedCommands() {
 	testOut := os.Stdout
 	testArgs := []string{"someapp", "foo", "qux"}
 
@@ -279,7 +280,7 @@ func (mc *myCommand) ExecCommand(ctx context.Context, args []string) error {
 	return mc.ErrToReturn
 }
 
-func ExampleExecStruct() {
+func Example_execStruct() {
 	myErr := errors.New("everything is ok")
 	myCmd := &myCommand{ErrToReturn: myErr}
 
@@ -311,7 +312,7 @@ func ExampleExecStruct() {
 	// Output:
 }
 
-func ExamplePropagateFlags() {
+func Example_propagateFlags() {
 	testOut := os.Stdout
 	testArgs := []string{"someapp", "foo", "-dir=test-dir", "--verbose"}
 	buf := &bytes.Buffer{}
