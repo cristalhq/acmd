@@ -61,8 +61,11 @@ type FlagsGetter interface {
 	Flags() *flag.FlagSet
 }
 
+// just for a simple internal code
+type execFunc = func(ctx context.Context, args []string) error
+
 // simple way to get exec function
-func (cmd *Command) getExec() func(ctx context.Context, args []string) error {
+func (cmd *Command) getExec() execFunc {
 	switch {
 	case cmd.ExecFunc != nil:
 		return cmd.ExecFunc
@@ -107,6 +110,10 @@ type Config struct {
 
 	// VerboseHelp if "./app help -v" is passed, default is false.
 	VerboseHelp bool
+
+	// AutoComplete application commands in a terminal, default is false.
+	// See GUIDE.md for more info.
+	AutoComplete bool
 }
 
 // HasHelpFlag reports whether help flag is presented in args.
@@ -208,6 +215,29 @@ func (r *Runner) init() error {
 		},
 	)
 
+	if r.cfg.AutoComplete {
+		r.cmds = append(r.cmds,
+			Command{
+				Name:     "__complete",
+				IsHidden: true,
+				Subcommands: []Command{
+					{
+						Name:     "install",
+						ExecFunc: r.completeInstallCmd,
+					},
+					{
+						Name:     "script",
+						ExecFunc: r.completeScriptCmd,
+					},
+					{
+						Name:     "query",
+						ExecFunc: r.completeQueryCmd,
+					},
+				},
+			},
+		)
+	}
+
 	sort.Slice(r.cmds, func(i, j int) bool {
 		return r.cmds[i].Name < r.cmds[j].Name
 	})
@@ -295,7 +325,7 @@ func (r *Runner) Run() error {
 	return cmd(r.ctx, params)
 }
 
-func findCmd(cfg Config, cmds []Command, args []string) (func(ctx context.Context, args []string) error, []string, error) {
+func findCmd(cfg Config, cmds []Command, args []string) (execFunc, []string, error) {
 	for {
 		selected, params := args[0], args[1:]
 
