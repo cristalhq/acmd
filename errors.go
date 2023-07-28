@@ -5,9 +5,7 @@ import (
 	"fmt"
 )
 
-var (
-	ErrNoArgs = errors.New("no args provided")
-)
+var ErrNoArgs = errors.New("no args provided")
 
 // ErrCode is a number to be returned as an exit code.
 type ErrCode int
