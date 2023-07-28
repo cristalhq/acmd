@@ -61,7 +61,7 @@ type FlagsGetter interface {
 	Flags() *flag.FlagSet
 }
 
-// simple way to get exec function
+// simple way to get exec function.
 func (cmd *Command) getExec() func(ctx context.Context, args []string) error {
 	switch {
 	case cmd.ExecFunc != nil:
@@ -230,10 +230,10 @@ func validateCommand(cmd Command) error {
 	case cmd.Alias == "help" || cmd.Alias == "version":
 		return fmt.Errorf("command alias %q is reserved", cmd.Alias)
 
-	case !isStringValid(cmd.Name):
+	case !isNameValid(cmd.Name):
 		return fmt.Errorf("command %q must contains only letters, digits, - and _", cmd.Name)
 
-	case cmd.Alias != "" && !isStringValid(cmd.Alias):
+	case cmd.Alias != "" && !isNameValid(cmd.Alias):
 		return fmt.Errorf("command alias %q must contains only letters, digits, - and _", cmd.Alias)
 
 	case len(cmds) != 0:
@@ -270,8 +270,8 @@ func validateSubcommands(cmds []Command) error {
 	return nil
 }
 
-func isStringValid(s string) bool {
-	if len(s) == 0 {
+func isNameValid(s string) bool {
+	if s == "" {
 		return false
 	}
 	for _, c := range s {
@@ -369,7 +369,7 @@ func defaultUsage(r *Runner) func(cfg Config, cmds []Command) {
 	}
 }
 
-// printCommands in a table form (Name and Description)
+// printCommands in a table form (Name and Description).
 func printCommands(cfg *Config, cmds []Command) {
 	minwidth, tabwidth, padding, padchar, flags := 0, 0, 11, byte(' '), uint(0)
 	tw := tabwriter.NewWriter(cfg.Output, minwidth, tabwidth, padding, padchar, flags)

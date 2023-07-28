@@ -391,23 +391,23 @@ func TestExit(t *testing.T) {
 	mustEqual(t, buf.String(), wantOutput)
 }
 
-func failIfOk(t testing.TB, err error) {
-	t.Helper()
+func failIfOk(tb testing.TB, err error) {
+	tb.Helper()
 	if err == nil {
-		t.Fail()
+		tb.Fail()
 	}
 }
 
-func failIfErr(t testing.TB, err error) {
-	t.Helper()
+func failIfErr(tb testing.TB, err error) {
+	tb.Helper()
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 }
 
-func mustEqual(t testing.TB, have, want interface{}) {
-	t.Helper()
+func mustEqual(tb testing.TB, have, want interface{}) {
+	tb.Helper()
 	if !reflect.DeepEqual(have, want) {
-		t.Fatalf("\nhave: %+v\nwant: %+v\n", have, want)
+		tb.Fatalf("\nhave: %+v\nwant: %+v\n", have, want)
 	}
 }
