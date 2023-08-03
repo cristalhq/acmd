@@ -113,9 +113,9 @@ func cmdBar(ctx context.Context, args []string) error {
 
 Also see `ExamplePropagateFlags` test.
 
-## TODO Build version
+## Build version
 
-Let's assume you have `var Version string` in `main` package. To populate `acmd.Config.Version` field you can do:
+Let's assume you have `var Version string` in `main` package. To fill this variable and then use as `acmd.Config.Version` you can do:
 
 ```sh
 $ go build -ldflags="-X 'main.Version=(local)'" -o my_binary .
@@ -125,3 +125,7 @@ $ ./my_binary version
 ```
 
 Starting from Go 1.18 this information is avaliable in `runtime/debug.BuildInfo`, see: https://github.com/golang/go/issues/37475
+
+To help with the wordy API to get these values you can use `acmd.GetBuildInfo()` function, which returns struct with `revision`, `last commit` and `is dirty build` fields.
+
+Note: there is a chance that you will build application and will find that data is not populated, probably you're observing https://github.com/golang/go/issues/51279. Consider to use `go install <your module>`.
