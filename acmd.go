@@ -92,7 +92,7 @@ type Config struct {
 	// Version of the application.
 	Version string
 
-	// Output is a destionation where result will be printed.
+	// Output is a destination where result will be printed.
 	// Exported for testing purpose only, if nil os.Stdout is used.
 	Output io.Writer
 
