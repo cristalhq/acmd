@@ -61,7 +61,7 @@ func run() error {
 
 ## Flags propagation
 
-There is no special methods, config fields to propagate flags to subcommands. However it's not hard to make this, because every command can access predefined flags, which are shared across handlers.
+There is no special methods, config fields to propagate flags to subcommands. However, it's not hard to make this, because every command can access predefined flags, which are shared across handlers.
 
 ```go
 // generalFlags can be used as flags for all command
@@ -124,4 +124,4 @@ $ ./my_binary version
 ./my_binary version: (local)
 ```
 
-Starting from Go 1.18 this information is avaliable in `runtime/debug.BuildInfo`, see: https://github.com/golang/go/issues/37475
+Starting from Go 1.18 this information is available in `runtime/debug.BuildInfo`, see: https://github.com/golang/go/issues/37475
