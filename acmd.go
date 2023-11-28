@@ -107,6 +107,8 @@ type Config struct {
 
 	// VerboseHelp if "./app help -v" is passed, default is false.
 	VerboseHelp bool
+
+	_ struct{} // enforce explicit field names.
 }
 
 // HasHelpFlag reports whether help flag is presented in args.
