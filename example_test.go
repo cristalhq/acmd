@@ -19,7 +19,7 @@ var (
 	nopUsage = func(cfg acmd.Config, cmds []acmd.Command) {}
 )
 
-func ExampleRunner() {
+func Example() {
 	testOut := os.Stdout
 	testArgs := []string{"someapp", "now", "--times", "3"}
 
