@@ -6,7 +6,7 @@
 [![coverage-img]][coverage-url]
 [![version-img]][version-url]
 
-Simple, useful and opinionated CLI package in Go. For config loader see [aconfig](https://github.com/cristalhq/aconfig)
+Simple, useful and opinionated CLI package in Go. For config loader see [cristalhq/aconfig](https://github.com/cristalhq/aconfig)
 
 ## Rationale
 
@@ -20,6 +20,8 @@ Popular CLI libraries (or better frameworks) have too large and unclear API, in 
 * Command aliases.
 * Auto suggesting command.
 * Builtin `help` and `version` commands.
+
+See [docs][pkg-url] and [GUIDE.md](GUIDE.md) for more details.
 
 ## Install
 
@@ -67,10 +69,6 @@ if err := r.Run(); err != nil {
 ```
 
 See examples: [example_test.go](example_test.go).
-
-## Documentation
-
-See [these docs][pkg-url] or [GUIDE.md](GUIDE.md) for more details.
 
 ## License
 
